@@ -331,9 +331,10 @@ class Rotate:
 
 
 class Draw:
-    def __init__(self):
-        self.HEIGHT = HEIGHT
-        self.WIDTH = WIDTH
+    def __init__(self, height=HEIGHT, width=WIDTH, scale=SCALE):
+        self.HEIGHT = height
+        self.WIDTH = width
+        self.SCALE = scale
         self.art_buffer = []
         self.rasters = []
 
@@ -351,8 +352,8 @@ class Draw:
     def draw (self):
         fig = plt.figure(figsize=(self.WIDTH, self.HEIGHT))
         ax = fig.add_subplot()
-        plt.xlim(-SCALE*self.WIDTH, SCALE*self.WIDTH)
-        plt.ylim(-SCALE*self.HEIGHT, SCALE*self.HEIGHT)
+        plt.xlim(-self.SCALE*self.WIDTH, self.SCALE*self.WIDTH)
+        plt.ylim(-self.SCALE*self.HEIGHT, self.SCALE*self.HEIGHT)
         plt.autoscale(False)
         boundary = [-SCALE*self.WIDTH, SCALE*self.WIDTH], [SCALE*self.HEIGHT, SCALE*self.HEIGHT]
         ax.plot(boundary[0],boundary[1], color='#000000', alpha=0)
