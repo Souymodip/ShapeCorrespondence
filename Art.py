@@ -18,7 +18,7 @@ def get_code(rgb=(255,255,255)):
     return "#"+new_code
 
 
-def print_raster( raster):
+def print_raster(raster):
     s = ""
     for ij in np.ndindex(raster.shape[:2]):
         if ij[1] == 0:
@@ -185,6 +185,14 @@ class Bezier(Art):
                 xs, ys = zip(*self.controls)
                 ax.plot(xs, ys, '--o', color='red')
 
+    def length(self):
+        assert (len(self.controls) == 4)
+        c = np.linalg.norm(self.controls[0] - self.controls[-1])
+        cc = np.linalg.norm(self.controls[0] - self.controls[1]) + \
+             np.linalg.norm(self.controls[1] - self.controls[2]) + \
+             np.linalg.norm(self.controls[2] - self.controls[3])
+        return (c + cc)/2
+
 
 class PieceWiseBezier(Art):
     def __init__(self, anchors, is_closed=True, show_control=False):
@@ -207,6 +215,9 @@ class PieceWiseBezier(Art):
                 anchors[0][0]
             ], show_control))
         self.show_controls = show_control
+
+    def get_beziers(self):
+        return self.beziers
 
     def set_color(self, rgb):
         for b in self.beziers:
