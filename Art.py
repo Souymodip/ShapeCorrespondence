@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 import matplotlib.patches as patches
-import operator
 import math
 import Pixel
 import numpy as np
@@ -9,6 +8,7 @@ import numpy as np
 WIDTH = 10
 HEIGHT = 8
 SCALE = 2
+
 
 def get_code(rgb=(255,255,255)):
     code = str(hex((rgb[0]*65536)+(rgb[1]*256)+rgb[2]))[2:]
@@ -198,7 +198,7 @@ class PieceWiseBezier(Art):
                 anchors[i][2],
                 anchors[i+1][1],
                 anchors[i+1][0]
-            ], show_control));
+            ], show_control))
         if is_closed:
             self.beziers.append(Bezier([
                 anchors[-1][0],
@@ -222,6 +222,38 @@ class PieceWiseBezier(Art):
 
     def get_vertices(self):
         return np.array([b.controls[0] for b in self.beziers])
+
+    def get_centroid(self):
+        vertices = self.get_vertices()
+        return np.mean(vertices, axis=0)
+
+    def split_bezier_in_parts(self, index, parts):
+        while parts > 1:
+            r = 1 / parts
+            self.split_bezier(index, r)
+            index = index + 1
+            parts = parts - 1
+
+
+    def split_bezier(self, index, t):
+        assert (0 < t < 1)
+        b = self.beziers[index]
+        p0 = b.controls[0]
+        p3 = b.controls[3]
+        p01 = t * p0 + (1-t) * b.controls[1]
+        p12 = t * b.controls[1] + (1-t) * b.controls[2]
+        p23 = t * b.controls[2] + (1-t) * p3
+        p0112 = t * p01 + (1-t) * p12
+        p1223 = t * p12 + (1-t) * p23
+        q = t * p0112 + (1-t) * p1223
+
+        self.beziers[index] = Bezier([
+            p0, p01, p0112, q
+        ], self.show_controls)
+
+        self.beziers.insert(index+1, Bezier([
+            q, p1223, p23, p3
+        ], self.show_controls))
 
 
 class Polygon(Art):
@@ -261,6 +293,9 @@ class Polygon(Art):
 
     def grad_area(self, qr):
         return Pixel.grad_area(self, qr)
+
+    def get_centroid(self):
+        return np.mean(self.points, axis=0)
 
 
 class Function(Art):
@@ -311,8 +346,23 @@ class Translate:
         self.delta = delta
 
     def apply(self, points):
-        return [tuple(map(operator.add, c, (self.delta[0], self.delta[1]))) for c in points]
+        return [c + self.delta for c in points]
 
+
+class FlipX:
+    def __init__(self, x = 0):
+        self.x = x
+
+    def apply(self, points):
+        return [np.array([-c[0] + 2*self.x , c[1]]) for c in points]
+
+
+class Scale:
+    def __init__(self, scale):
+        self.scale = scale
+
+    def apply(self, points):
+        return [self.scale * c for c in points]
 
 class Rotate:
     def __init__(self, radian, origin = (0,0)):
@@ -324,8 +374,8 @@ class Rotate:
         s = math.sin(self.delta)
 
         def rotate_point(p):
-            dp = tuple(map(operator.sub, p, self.origin))
-            return c * dp[0] - s * dp[1] + self.origin[0], s * dp[0] + c * dp[1] + self.origin[1]
+            dp = p - self.origin
+            return np.array([c * dp[0] - s * dp[1] + self.origin[0], s * dp[0] + c * dp[1] + self.origin[1]])
 
         return [rotate_point(p) for p in points]
 

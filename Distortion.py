@@ -1,5 +1,6 @@
 import numpy as np
 import Art
+import ArtCollection
 
 def distance(p1, point_list):
     n = [np.linalg.norm(p1 - p) for p in point_list]
