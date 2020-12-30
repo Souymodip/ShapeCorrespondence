@@ -232,7 +232,12 @@ class PieceWiseBezier(Art):
             b.add(ax)
 
     def get_vertices(self):
-        return np.array([b.controls[0] for b in self.beziers])
+        v = np.array([b.controls[0] for b in self.beziers])
+        return np.append(v, self.beziers[-1].controls[3])
+
+    def get_vertex(self, index):
+        assert (index <= len(self.beziers))
+        return self.beziers[index].controls[0] if index < len(self.beziers) else self.beziers[-1].controls[3]
 
     def get_centroid(self):
         vertices = self.get_vertices()
@@ -245,6 +250,11 @@ class PieceWiseBezier(Art):
             index = index + 1
             parts = parts - 1
 
+    def size(self):
+        return len(self.beziers)
+
+    def get_bezier(self, index):
+        return self.beziers[index%len(self.beziers)]
 
     def split_bezier(self, index, t):
         assert (0 < t < 1)
