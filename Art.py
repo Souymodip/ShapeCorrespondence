@@ -4,6 +4,7 @@ import matplotlib.patches as patches
 import math
 import Pixel
 import numpy as np
+import copy
 
 WIDTH = 10
 HEIGHT = 8
@@ -167,6 +168,8 @@ class Bezier(Art):
         super().__init__()
         self.controls = controls
         self.show_controls = show_control
+        self.DISCRETE = 10
+        assert(self.DISCRETE > 0)
 
     def apply(self, T):
         self.controls = T.apply(self.controls)
@@ -187,18 +190,44 @@ class Bezier(Art):
 
     def length(self):
         assert (len(self.controls) == 4)
-        c = np.linalg.norm(self.controls[0] - self.controls[-1])
-        cc = np.linalg.norm(self.controls[0] - self.controls[1]) + \
-             np.linalg.norm(self.controls[1] - self.controls[2]) + \
-             np.linalg.norm(self.controls[2] - self.controls[3])
-        return (c + cc)/2
+        length = 0
+
+        def split(controls, t):
+            p0 = controls[0]
+            p3 = controls[3]
+            p01 = t * p0 + (1 - t) * controls[1]
+            p12 = t * controls[1] + (1 - t) * controls[2]
+            p23 = t * controls[2] + (1 - t) * p3
+            p0112 = t * p01 + (1 - t) * p12
+            p1223 = t * p12 + (1 - t) * p23
+            q = t * p0112 + (1 - t) * p1223
+            return np.array([p0, p01, p0112, q]), np.array([q, p1223, p23, p3])
+
+        def discrete_len(controls):
+            c = np.linalg.norm(controls[0] - controls[-1])
+            cc = np.linalg.norm(controls[0] - controls[1]) + \
+                 np.linalg.norm(controls[1] - controls[2]) + \
+                 np.linalg.norm(controls[2] - controls[3])
+            return (c + cc) / 2
+        t = 0
+        p = self.controls
+        for i in range(self.DISCRETE):
+            t = t + 1/self.DISCRETE
+            l, r = split(controls=p, t=t)
+            length = length + discrete_len(l)
+            p = r
+        return length
 
 
 class PieceWiseBezier(Art):
+    def __int__(self, beziers):
+        super().__init__()
+        self.beziers = beziers
+
     def __init__(self, anchors, is_closed=True, show_control=False):
         super().__init__()
         assert(anchors.shape[1] == 3 and anchors.shape[2] == 2)
-
+        self.is_closed = is_closed
         self.beziers = []
         for i in range(anchors.shape[0] - 1):
             self.beziers.append(Bezier([
@@ -233,7 +262,7 @@ class PieceWiseBezier(Art):
 
     def get_vertices(self):
         v = np.array([b.controls[0] for b in self.beziers])
-        return np.append(v, self.beziers[-1].controls[3])
+        return np.append(v, [self.beziers[-1].controls[3]], axis=0)
 
     def get_vertex(self, index):
         assert (index <= len(self.beziers))
