@@ -6,8 +6,8 @@ import Pixel
 import numpy as np
 import copy
 
-WIDTH = 10
-HEIGHT = 8
+WIDTH = 12
+HEIGHT = 10
 SCALE = 2
 
 
