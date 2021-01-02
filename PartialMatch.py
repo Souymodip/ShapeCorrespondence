@@ -8,11 +8,11 @@ import itertools
 
 
 SIGMA = 2
-SUPPORT = 2*8
+SUPPORT = 2*6
 THRESHOLD = 0.035
 ALPHA = 0
-MATCH_SUPPORT = 20
-SIMILARITY_COUNT = 3
+MATCH_SUPPORT = 2
+SIMILARITY_COUNT = 2
 
 
 class Mode(Enum):
@@ -122,6 +122,7 @@ def least(context, contexts, match_support_count):
     def f(c2):
         return np.linalg.norm(context - c2)
 
+    # diff = np.array([f(contexts[i]) for i in np.ndindex(contexts.shape[0])])
     diff = np.apply_along_axis(f, 1, contexts)
     l = np.zeros((match_support_count), dtype=int)
     for i in np.ndindex(l.shape[0]):
@@ -147,12 +148,13 @@ def get_similar_points(contexts1, contexts2, matching_support, similarity_count)
 
 def cost(matching, art1, art2, contexts1, contexts2):
     difference = sum([np.linalg.norm(contexts1[p] - contexts2[q]) for p,q in zip(matching[0], matching[1])])
+    # return difference
     distortion = 0
     for i in range(len(matching[0])):
         for j in range(i+1, len(matching[0])):
             p, p1 = art1.get_vertex(matching[0][i]), art1.get_vertex(matching[0][j])
             q, q1 = art2.get_vertex(matching[1][i]), art2.get_vertex(matching[1][j])
-            distortion = distortion +  np.linalg.norm(p - p1 - (q - q1))
+            distortion = distortion + np.linalg.norm(p - p1 - (q - q1))
     return difference + distortion
 
 
@@ -174,11 +176,14 @@ def find_opt_match(art1, art2, mode, matching_support, similarity_count):
     curr_cost = np.inf
     min_tau = []
     for tau in search_space:
+        val = cost((similar1, tau), art1, art2, context1, context2)
         if len(similar1) != len(tau):
             print("{}, {}".format(similar1, tau))
             assert (len(similar1) == len(tau))
-        if curr_cost > cost((similar1, tau), art1, art2, context1, context2):
+        if curr_cost > val:
             min_tau = tau
+            curr_cost = val
+
     return similar1, min_tau
 
 
@@ -305,7 +310,7 @@ def main():
 
     t1, t2 = lion_gorilla()
 
-    mode = Mode.ArcLength
+    mode = Mode.Distance
     matching = find_opt_match(art1=t1, art2=t2, mode=mode, matching_support=MATCH_SUPPORT, similarity_count=SIMILARITY_COUNT)
     plot_match(art1=t1, art2=t2, matching=matching, draw=d)
     # transform(art1=t1, art2=t2, matching=matching, threshold=THRESHOLD, draw=d, mode=mode)
