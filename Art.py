@@ -285,6 +285,15 @@ class PieceWiseBezier(Art):
     def get_bezier(self, index):
         return self.beziers[index%len(self.beziers)]
 
+    def get_bounding_box(self):
+        points = []
+        for b in self.beziers:
+            for i in range(3):
+                points.append(b.controls[i])
+        points = np.array(points)
+        x, y = np.hsplit(points, 2)
+        return np.array([[np.min(x), np.min(y)], [np.max(x), np.max(y)]])
+
     def split_bezier(self, index, t):
         assert (0 < t < 1)
         b = self.beziers[index]
