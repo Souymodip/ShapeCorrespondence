@@ -112,4 +112,4 @@ def main_test(test):
     d.add_art(test[1])
     d.draw()
 
-main_test(get_test(3))
+# main_test(get_test(3))
