@@ -11,8 +11,8 @@ SIGMA = 2
 SUPPORT = 2*6
 THRESHOLD = 0.035
 ALPHA = 0
-MATCH_SUPPORT = 2
-SIMILARITY_COUNT = 2
+MATCH_SUPPORT = 1
+SIMILARITY_COUNT = 5
 
 
 class Mode(Enum):
@@ -183,7 +183,6 @@ def find_opt_match(art1, art2, mode, matching_support, similarity_count):
         if curr_cost > val:
             min_tau = tau
             curr_cost = val
-
     return similar1, min_tau
 
 
@@ -274,6 +273,13 @@ def transform(art1, art2, matching, threshold, draw, mode):
             draw.add_art(b21)
 
 
+def plot_transform(art1, art2, matching):
+    points = np.array([art1.get_vertex(matching[0][i]) - art2.get_vertex(matching[1][i]) for i in range(len(matching[0]))])
+    x,y = np.hsplit(points, 2)
+    plt.scatter(x, y)
+    plt.show()
+
+
 def trees():
     t1 = ArtCollection.tree1
     t1.apply(Art.Translate([-3.5, 1]))
@@ -296,22 +302,23 @@ def lion_gorilla():
 
 def elephant_giraffe():
     t1 = ArtCollection.elephant
-    t1.apply(Art.Scale(2))
-    t1.apply(Art.Translate([-6, 3]))
+    t1.apply(Art.Scale(6))
+    t1.apply(Art.Translate([-36, 13]))
 
-    t2 = copy.copy(ArtCollection.elephant)
-    # t2.apply(Art.Scale(3))
-    # t2.apply(Art.Translate([2, -1]))
+    t2 = ArtCollection.giraffe
+    t2.apply(Art.Scale(6))
+    t2.apply(Art.Translate([2, -1]))
     return t1, t2
 
 
 def main():
     d = Art.Draw()
 
-    t1, t2 = lion_gorilla()
+    t1, t2 = elephant_giraffe()
 
     mode = Mode.Distance
     matching = find_opt_match(art1=t1, art2=t2, mode=mode, matching_support=MATCH_SUPPORT, similarity_count=SIMILARITY_COUNT)
+    plot_transform(art1=t1, art2=t2, matching=matching)
     plot_match(art1=t1, art2=t2, matching=matching, draw=d)
     # transform(art1=t1, art2=t2, matching=matching, threshold=THRESHOLD, draw=d, mode=mode)
 
