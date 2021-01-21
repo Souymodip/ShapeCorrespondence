@@ -1,6 +1,6 @@
 import numpy as np
 import Art
-import testsLevel0 as testsuite
+import testsLevel1 as testsuite
 import copy
 import matplotlib.pyplot as plt
 import DFT
@@ -205,12 +205,12 @@ def test_at(poly1, poly2, i, j, draw):
 
 def main():
     d = Art.Draw()
-    art1, art2 = testsuite.get_test(3)
+    art1, art2 = testsuite.get_test(1)
 
     polygon1, polygon2 = piecewise_bezier_to_polygon(art=art1), piecewise_bezier_to_polygon(art=art2)
     print(len(polygon1), len(polygon2))
 
-    importance_angle = 10
+    importance_angle = 5
 
     n_p1, n_p2 = squint(polygon1, True, np.deg2rad(importance_angle)), squint(polygon2, True, np.deg2rad(importance_angle))
     print(len(n_p1), len(n_p2))

@@ -4,7 +4,7 @@ import Art
 import matplotlib.pyplot as plt
 from enum import Enum
 import copy
-import itertools
+import testsLevel1
 
 
 SIGMA = 2
@@ -12,7 +12,7 @@ SUPPORT = 2*6
 THRESHOLD = 0.035
 ALPHA = 0
 MATCH_SUPPORT = 1
-SIMILARITY_COUNT = 5
+SIMILARITY_COUNT = 10
 
 
 class Mode(Enum):
@@ -159,7 +159,7 @@ def cost(matching, art1, art2, contexts1, contexts2):
 
 
 def find_opt_match(art1, art2, mode, matching_support, similarity_count):
-    context1, context2 = np.zeros((art1.size() + 1, SUPPORT)), np.zeros((art2.size() + 1, SUPPORT))
+    context1, context2 = np.zeros((art1.no_of_beziers() + 1, SUPPORT)), np.zeros((art2.no_of_beziers() + 1, SUPPORT))
     for i in range(context1.shape[0]):
         context1[i] = get_context(art1, i, support=SUPPORT, mode=mode)
     for j in range(context2.shape[0]):
@@ -314,11 +314,11 @@ def elephant_giraffe():
 def main():
     d = Art.Draw()
 
-    t1, t2 = elephant_giraffe()
+    t1, t2 = testsLevel1.get_test(1)
 
     mode = Mode.Distance
     matching = find_opt_match(art1=t1, art2=t2, mode=mode, matching_support=MATCH_SUPPORT, similarity_count=SIMILARITY_COUNT)
-    plot_transform(art1=t1, art2=t2, matching=matching)
+    # plot_transform(art1=t1, art2=t2, matching=matching)
     plot_match(art1=t1, art2=t2, matching=matching, draw=d)
     # transform(art1=t1, art2=t2, matching=matching, threshold=THRESHOLD, draw=d, mode=mode)
 
