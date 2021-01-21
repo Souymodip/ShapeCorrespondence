@@ -13,8 +13,7 @@ import ArtCollection
 
 def get_test(index):
     if index == 0:
-        test0 = [
-            Art.PieceWiseBezier(np.array([
+        test0 = Art.PieceWiseBezier(np.array([
                 [[0.206395, -5.23171], [0.206395, -5.85327], [0.206395, -5.23171]],
                 [[0.206395, -1.27258], [0.206395, -1.27258], [0.206395, -0.651023]],
                 [[1.33183, -0.147147], [0.71027, -0.147147], [1.33183, -0.147147]],
@@ -23,8 +22,8 @@ def get_test(index):
                 [[6.07639, -5.23171], [6.07639, -5.23171], [6.07639, -5.85327]],
                 [[4.95096, -6.35715], [5.57252, -6.35715], [4.95096, -6.35715]],
                 [[1.33183, -6.35715], [1.33183, -6.35715], [0.71027, -6.35715]]
-            ]), is_closed=True, show_control=True),
-            Art.PieceWiseBezier(np.array([
+            ]), is_closed=True, show_control=True)
+        test1 = Art.PieceWiseBezier(np.array([
                 [[0.206395, -5.23171], [0.206395, -5.85327], [0.206395, -5.23171]],
                 [[0.206395, -3.29828], [0.206395, -3.29828], [0.206395, -3.29828]],
                 [[0.206395, -2.45414], [0.206395, -2.45414], [0.206395, -2.45414]],
@@ -37,10 +36,10 @@ def get_test(index):
                 [[4.95096, -6.35715], [5.57252, -6.35715], [4.95096, -6.35715]],
                 [[1.33183, -6.35715], [1.33183, -6.35715], [0.71027, -6.35715]]
             ]), is_closed=True, show_control=True)
-        ]
-        test0[0].apply(Art.Translate([-15, 0]))
-        test0[1].apply(Art.Translate([5, 0]))
-        return test0
+
+        test0.apply(Art.Translate([-15, 0]))
+        test1.apply(Art.Translate([5, 0]))
+        return test0, test1
 
     if index == 1:
         t1 = ArtCollection.lion
@@ -49,7 +48,7 @@ def get_test(index):
         t2 = ArtCollection.gorilla
         t2.apply(Art.Scale(5))
         t2.apply(Art.Translate([2, -1]))
-        return [t1, t2]
+        return t1, t2
 
     if index == 2:
         t1 = ArtCollection.elephant
@@ -59,7 +58,7 @@ def get_test(index):
         t2 = ArtCollection.giraffe
         t2.apply(Art.Scale(6))
         t2.apply(Art.Translate([2, -1]))
-        return [t1, t2]
+        return t1, t2
 
     if index == 3:
         t1 = ArtCollection.maple_leaf
@@ -68,7 +67,7 @@ def get_test(index):
         t2.apply(Art.Scale(10))
         t1.apply(Art.Translate([-40, 40]))
         t2.apply(Art.Translate([-20, 40]))
-        return [t1, t2]
+        return t1, t2
 
     if index == 4:
         t1 = ArtCollection.dog1
@@ -77,14 +76,12 @@ def get_test(index):
         t2.apply(Art.Scale(5))
         t1.apply(Art.Translate([-25, 10]))
         t2.apply(Art.Translate([0, 10]))
-        return [t1, t2]
+        return t1, t2
 
 
 def main_test(test):
     d = Art.Draw()
-    d.add_art(test[0])
-    d.add_art(test[1])
+    t1, t2 = test
+    d.add_art(t1)
+    d.add_art(t2)
     d.draw()
-
-
-main_test(get_test(4))

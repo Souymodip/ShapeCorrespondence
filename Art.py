@@ -30,6 +30,25 @@ def print_raster(raster):
     print(s)
 
 
+def rotate_points(points, radian, about):
+    c = np.cos(radian)
+    s = np.sin(radian)
+    dp = points - about
+    return np.array([[c * p[0] - s * p[1] + about[0], s * p[0] + c * p[1] + about[1]] for p in dp])
+
+
+def quad_roots(a, b, c):
+    if a == 0:
+        assert (b!=0)
+        return np.array([-c/b])
+    disc = b**2 - 4*a*c
+    if disc > 0:
+        sq_disc = np.sqrt(disc)
+        return np.array([(-b + sq_disc)/(2*a), (-b - sq_disc)/(2*a)])
+    else:
+        return np.array([])
+
+
 class Art:
     def __init__(self):
         self.point_buffer = ([], [])
@@ -123,6 +142,7 @@ class Rectangle(Art):
     def is_inside(self, point):
         return (self.get_left() <= point[0] <= self.get_right()) or (self.get_bottom() <= point[0] <= self.get_top())
 
+
 class Line(Art):
     def __init__(self, start, end):
         super().__init__()
@@ -178,6 +198,36 @@ class Bezier(Art):
     def set_color(self, rgb):
         self.color = get_code(rgb)
 
+    def point_at(self, t):
+        p = self.controls
+        return p[0] * ((1 - t) ** 3) + 3 * p[1] * ((1 - t) ** 2) * t + 3 * p[2] * (1 - t) * (t ** 2) + p[3] * (t ** 3)
+
+    def aligned(self):
+        p = copy.deepcopy(self.controls) - self.controls[0]
+        if p[-1][1] != p[0][1]:
+            radian = np.pi / 2 if p[0][0] == p[-1][0] else \
+                np.arctan((p[-1][1] - p[0][1]) / (p[-1][0] - p[0][0]))
+            p = rotate_points(points=p, radian=-radian, about=p[0])
+        return Bezier(p)
+
+    def get_extremes(self):
+        p = self.aligned().controls
+
+        a = (3*(-p[0] + 3*p[1] -3*p[2] + p[3]))[1]
+        b = (6*(p[0] - 2*p[1] + p[2]))[1]
+        c = (3*(p[1] - p[0]))[1]
+
+        if a == b == 0:
+            r = np.array([0]) if p[0][1] > p[3][1] else np.array([1])
+        else:
+            r = quad_roots(a, b, c)
+            r = np.array([t for t in r if 0 <=t <= 1])
+            r = np.sort(r)
+            if r.size == 0:
+                r = np.array([0]) if p[0][1] > p[3][1] else np.array([1])
+
+        return np.array([self.point_at(t) for t in r])
+
     def add(self, ax):
         codes = [Path.MOVETO, Path.CURVE4, Path.CURVE4, Path.CURVE4]
         if len(self.controls) == 4:
@@ -217,6 +267,22 @@ class Bezier(Art):
             length = length + discrete_len(l)
             p = r
         return length
+
+    def get_point(self, t):
+        assert (0<= t <= 1)
+        p0 = self.controls[0]
+        p1 = self.controls[1]
+        p2 = self.controls[2]
+        p3 = self.controls[3]
+        return ((1-t) ** 3) * p0 + 3 * t * ((1-t)**2) * p1 + 3 * (t**2) * (1-t) * p2 + (t**3) * p3
+
+    def get_gradient(self, t):
+        assert (0 <= t <= 1)
+        p0 = self.controls[0]
+        p1 = self.controls[1]
+        p2 = self.controls[2]
+        p3 = self.controls[3]
+        return 3 * ((1-t)**2) * (p1 - p0) + 6 * (1-t) * t * (p2 - p1) + 3 * (t**2) * (p3 - p2)
 
 
 class PieceWiseBezier(Art):
@@ -260,6 +326,9 @@ class PieceWiseBezier(Art):
         for b in self.beziers:
             b.add(ax)
 
+    def no_of_vertices(self):
+        return len(self.beziers) if self.is_closed else len(self.beziers) + 1
+
     def get_vertices(self):
         v = np.array([b.controls[0] for b in self.beziers])
         return np.append(v, [self.beziers[-1].controls[3]], axis=0)
@@ -279,7 +348,7 @@ class PieceWiseBezier(Art):
             index = index + 1
             parts = parts - 1
 
-    def size(self):
+    def no_of_beziers(self):
         return len(self.beziers)
 
     def get_bezier(self, index):
@@ -313,6 +382,11 @@ class PieceWiseBezier(Art):
         self.beziers.insert(index+1, Bezier([
             q, p1223, p23, p3
         ], self.show_controls))
+
+    def increase_by(self, factor):
+        assert (factor >= 2)
+        for i in range(len(self.beziers)):
+            self.split_bezier_in_parts(i, factor)
 
 
 class Polygon(Art):
@@ -485,3 +559,27 @@ class Draw:
             # plt.axis("off")
             print("Raster Intensity := {:.5f}".format(np.sum(r)))
         plt.show()
+
+
+def draw_match(art1, art2, m, draw, window=1):
+    points1, points2 = art1.get_vertices(), art2.get_vertices()
+    for ij in m:
+        i,j = ij
+        c1 = Circle(points1[i], 0.2)
+        c2 = Circle(points2[j], 0.2)
+        c1.set_color((255,0 , 0))
+        c2.set_color((0,0, 255))
+        l = Line(points1[i], points2[j])
+        l.set_color((0,255,0))
+        draw.add_art(l)
+        draw.add_art(c1)
+        draw.add_art(c2)
+        bs = [art1.get_bezier(k) for k in range(i, i + window)]
+        for b in bs:
+            b.set_color((255, 255, 0))
+            draw.add_art(b)
+
+        bs = [art2.get_bezier(k) for k in range(j, j + window)]
+        for b in bs:
+            b.set_color((0, 255, 255))
+            draw.add_art(b)
