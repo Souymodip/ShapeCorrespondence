@@ -11,7 +11,7 @@ We will explore different ideas
   
 3. The shape outline curvature is represented as a function of normalised distance. The similarity between two points on their respective shapes is measured as metric of similarity between the curvature vs normalized distance graph. This metric is by construction, rotation and scale invariant. The following graph similarity metrics are considered:</br>
 
-     3.a. <b>Discrete Fourier Transfomed Descriptor </b>: The graph is transfomed to its frequency domain. The frequencies define a infinite vector space. We approximated to a predefined size. Any vector represents the amplitudes of the various frequences. The similarity metric is the l2-norm of two vector in this space.
+     3.a. <b>Discrete Fourier Transform Descriptor </b>: The graph is transfomed to its frequency domain. The frequencies define a infinite vector space. We approximated to a predefined size. Any vector represents the amplitudes of the various frequences. The similarity metric is the l2-norm of two vector in this space.
   
      3.b. <b>Enclosed Area </b>: The enclosing area between the two graph defines the similarity.
      
