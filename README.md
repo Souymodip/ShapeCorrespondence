@@ -14,4 +14,6 @@ We will explore different ideas
      3.a. <b>Discrete Fourier Transfomed Descriptor </b>: The graph is transfomed to its frequency domain. The frequencies define a infinite vector space. We approximated to a predefined size. Any vector represents the amplitudes of the various frequences. The similarity metric is the l2-norm of two vector in this space.
   
      3.b. <b>Enclosed Area </b>: The enclosing area between the two graph defines the similarity.
+     
+     Run <b><i>ShapeSimilarity.py</i></b> to see an example.
 
