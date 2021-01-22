@@ -1,6 +1,6 @@
 import numpy as np
 import Art
-import testsLevel1 as testsuite
+import testsLevel2 as testsuite
 import copy
 import matplotlib.pyplot as plt
 import DFT
@@ -26,7 +26,9 @@ def turn_angle(p0, p1, p2):
     if np.linalg.norm(a) * np.linalg.norm(b) == 0:
         print(p0, p1, p2)
     assert (np.linalg.norm(a) * np.linalg.norm(b) > 0 )
-    return np.arcsin(np.cross(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+    sin = np.cross(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+    sin = 1 if sin > 1 else (-1 if sin < -1 else sin)
+    return np.arcsin(sin)
 
 
 def draw_polygon(polygon, d, color =(0, 0, 0), open = False):
@@ -42,16 +44,13 @@ def draw_polygon(polygon, d, color =(0, 0, 0), open = False):
 
 def piecewise_bezier_to_polygon(art):
     polygon = []
-    # for i in range(art.no_of_beziers()):
-    #     art.split_bezier_in_parts(i, 30)
-
     for b in art.get_beziers():
-        # ex = b.get_extremes()
+        ex = b.get_extremes()
         if len(polygon) == 0 or is_diff(polygon[-1], b.controls[0]):
             polygon.append(b.controls[0])
-        # for e in ex:
-        #     if len(polygon) == 0 or is_diff(polygon[-1], b.controls[0]):
-        #         polygon.append(e)
+        for e in ex:
+            if len(polygon) == 0 or is_diff(polygon[-1], e):
+                polygon.append(e)
     return np.array(polygon)
 
 
@@ -106,28 +105,6 @@ def cut_and_measure(polygon1, polygon2):
 
         mat[ij] = enclosed_area(poly1=polygon1, i=i, poly2=polygon2, j=j)
     return mat
-
-
-def test_single(ij, poly1, poly2):
-    polygon1, polygon2 = poly1, poly2
-    i,j = ij
-    piece_size = 10
-    dft_dim = 10
-
-    sub_poly1, sub_poly2 = sub(polygon1, i, piece_size), sub(polygon2, j, piece_size)
-    a1, d1 = poly_to_turn_v_length(sub_poly1, closed=False)
-    a2, d2 = poly_to_turn_v_length(sub_poly2, closed=False)
-
-    dft1, dft2 = DFT.DFT_SIG(a1, d1, dft_dim), DFT.DFT_SIG(a2, d2, dft_dim)
-    print(dft1)
-    print(dft2)
-    print(np.linalg.norm(dft1 - dft2))
-
-    fig, (ax1, ax2) = plt.subplots(2)
-    fig.suptitle('Vertically stacked subplots')
-    ax1.plot(d1, a1)
-    ax2.plot(d2, a2)
-    plt.show()
 
 
 def get_min(mat):
@@ -199,26 +176,33 @@ def test_at(poly1, poly2, i, j, draw):
     d2 = d2/d2[-1]
     fs = [(a1, d1), (a2, d2)]
 
-    integral = FunctionSimilarity.diff(fs[0], fs[1], debug=False)
+    integral = FunctionSimilarity.diff(fs[0], fs[1], debug=True)
     print(integral)
 
 
 def main():
     d = Art.Draw()
-    art1, art2 = testsuite.get_test(1)
+    art1, art2 = testsuite.get_test(5)
+
+    art1.set_color((0, 0, 100))
+    d.add_art(art1)
+    art2.set_color((0, 0, 100))
+    d.add_art(art2)
+
 
     polygon1, polygon2 = piecewise_bezier_to_polygon(art=art1), piecewise_bezier_to_polygon(art=art2)
-    print(len(polygon1), len(polygon2))
 
-    importance_angle = 5
+    print(len(polygon1), len(polygon2))
+    #
+    importance_angle = 15
 
     n_p1, n_p2 = squint(polygon1, True, np.deg2rad(importance_angle)), squint(polygon2, True, np.deg2rad(importance_angle))
     print(len(n_p1), len(n_p2))
     draw_polygon(n_p1, d)
     draw_polygon(n_p2, d)
 
-    # test_at(n_p1, n_p2, 18, 23, d)
-    marching(poly1=n_p1, poly2=n_p2, iter=10, draw=d)
+    test_at(n_p1, n_p2, 6, 4, d)
+    # marching(poly1=polygon1, poly2=polygon2, iter=1, draw=d)
     d.draw()
 
 

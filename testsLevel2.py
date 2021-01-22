@@ -78,6 +78,13 @@ def get_test(index):
         t2.apply(Art.Translate([0, 10]))
         return t1, t2
 
+    if index == 5:
+        v0 = ArtCollection.snowMan
+        v1 = ArtCollection.HalfMan
+        v0.apply(Art.Translate([-10, 0]))
+        v1.apply(Art.Translate([10, 0]))
+        return v0, v1
+
 
 def main_test(test):
     d = Art.Draw()

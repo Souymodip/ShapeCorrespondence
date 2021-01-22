@@ -221,7 +221,7 @@ class Bezier(Art):
             r = np.array([0]) if p[0][1] > p[3][1] else np.array([1])
         else:
             r = quad_roots(a, b, c)
-            r = np.array([t for t in r if 0 <=t <= 1])
+            r = np.array([t for t in r if 0 <= t <= 1])
             r = np.sort(r)
             if r.size == 0:
                 r = np.array([0]) if p[0][1] > p[3][1] else np.array([1])
