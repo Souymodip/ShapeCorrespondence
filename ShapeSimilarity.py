@@ -24,11 +24,12 @@ def turn_angle(p0, p1, p2):
     a, b = p1 - p0, p2 - p1
 
     if np.linalg.norm(a) * np.linalg.norm(b) == 0:
-        print(p0, p1, p2)
-    assert (np.linalg.norm(a) * np.linalg.norm(b) > 0 )
-    sin = np.cross(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-    sin = 1 if sin > 1 else (-1 if sin < -1 else sin)
-    return np.arcsin(sin)
+        return 0.0
+    else:
+        # assert (np.linalg.norm(a) * np.linalg.norm(b) > 0 )
+        sin = np.cross(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+        sin = 1 if sin > 1 else (-1 if sin < -1 else sin)
+        return np.arcsin(sin)
 
 
 def draw_polygon(polygon, d, color =(0, 0, 0), open = False):
@@ -94,12 +95,12 @@ def enclosed_area(poly1, i, poly2, j):
     return FunctionSimilarity.diff(fs[0], fs[1])
 
 
-def cut_and_measure(polygon1, polygon2):
+def cut_and_measure(polygon1, polygon2, debug):
     mat = np.zeros(shape=(polygon1.shape[0], polygon2.shape[0], 1))
     old = 0
     for ij in np.ndindex(mat.shape[:2]):
         i, j = ij
-        if old != i:
+        if debug and old != i:
             old = i
             print(ij)
 
@@ -119,24 +120,28 @@ def get_min(mat):
     return min_ind, mat[min_ind]
 
 
-def marching(poly1, poly2, iter, draw):
+def marching(poly1, poly2, iter, draw, debug=False):
     count = 0
     polygon1, polygon2 = copy.deepcopy(poly1), copy.deepcopy(poly2)
-    mat = cut_and_measure(polygon1, polygon2)
-
+    mat = cut_and_measure(polygon1, polygon2, debug)
+    ret = []
     while count < iter:
         count = count + 1
         min_ind, min_val = get_min(mat)
-        print("Min[{}] := {}".format(min_ind, min_val))
+        if debug:
+            print("Min[{}] := {}".format(min_ind, min_val))
+        ret.append([min_ind, min_val[0]])
         mat[min_ind] = np.inf
-        k, l = min_ind
-        p,q = polygon1[k], polygon2[l]
-        c1, c2 = Art.Circle(p, 0.2), Art.Circle(q, 0.2)
-        c1.set_fill_color((255,0, 0)), c2.set_fill_color((255, 0, 0))
-        draw.add_art(c1), draw.add_art(c2)
-        l = Art.Line(p, q)
-        l.set_color((0, 0, 255))
-        draw.add_art(l)
+        if draw:
+            k, l = min_ind
+            p,q = polygon1[k], polygon2[l]
+            c1, c2 = Art.Circle(p, 0.2), Art.Circle(q, 0.2)
+            c1.set_fill_color((255,0, 0)), c2.set_fill_color((255, 0, 0))
+            draw.add_art(c1), draw.add_art(c2)
+            l = Art.Line(p, q)
+            l.set_color((0, 0, 255))
+            draw.add_art(l)
+    return ret
 
 
 def squint(polygon, is_closed, tolerance):
@@ -166,8 +171,6 @@ def test_at(poly1, poly2, i, j, draw):
     draw_polygon(poly1, draw)
     draw_polygon(poly2, draw)
 
-    draw.draw()
-
     sub_poly1, sub_poly2 = sub(poly1, i, poly1.shape[0]), sub(poly2, j, poly2.shape[0])
     a1, d1 = poly_to_turn_v_length(sub_poly1, closed=False)
     a2, d2 = poly_to_turn_v_length(sub_poly2, closed=False)
@@ -180,30 +183,35 @@ def test_at(poly1, poly2, i, j, draw):
     print(integral)
 
 
+def measure(art1, art2, d):
+    art1.set_color((0, 0, 100))
+    art2.set_color((0, 0, 100))
+
+    polygon1, polygon2 = piecewise_bezier_to_polygon(art=art1), piecewise_bezier_to_polygon(art=art2)
+    importance_angle = 15
+    n_p1, n_p2 = squint(polygon1, True, np.deg2rad(importance_angle)), squint(polygon2, True, np.deg2rad(importance_angle))
+
+    if d:
+        print(len(polygon1), len(polygon2))
+        print(len(n_p1), len(n_p2))
+
+        d.add_art(art1)
+        d.add_art(art2)
+        draw_polygon(n_p1, d)
+        draw_polygon(n_p2, d)
+
+    # if d: test_at(n_p1, n_p2, 6, 4, d)
+
+    return marching(poly1=polygon1, poly2=polygon2, iter=1, draw=d)
+
+
+
 def main():
     d = Art.Draw()
     art1, art2 = testsuite.get_test(5)
-
-    art1.set_color((0, 0, 100))
-    d.add_art(art1)
-    art2.set_color((0, 0, 100))
-    d.add_art(art2)
-
-
-    polygon1, polygon2 = piecewise_bezier_to_polygon(art=art1), piecewise_bezier_to_polygon(art=art2)
-
-    print(len(polygon1), len(polygon2))
-    #
-    importance_angle = 15
-
-    n_p1, n_p2 = squint(polygon1, True, np.deg2rad(importance_angle)), squint(polygon2, True, np.deg2rad(importance_angle))
-    print(len(n_p1), len(n_p2))
-    draw_polygon(n_p1, d)
-    draw_polygon(n_p2, d)
-
-    test_at(n_p1, n_p2, 6, 4, d)
-    # marching(poly1=polygon1, poly2=polygon2, iter=1, draw=d)
+    measure(art1, art2, d)
     d.draw()
 
 
-main()
+if __name__ == '__main__':
+    main()

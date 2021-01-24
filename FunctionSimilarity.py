@@ -15,6 +15,8 @@ def draw_graph(fs):
 
 
 def y_at(y_, y, x_, x, x_at):
+    if x == x_:
+        return y
     return y_ + (y - y_) * (x_at - x_) / (x - x_)
 
 def merge(ys1, xs1, ys2, xs2):
@@ -100,7 +102,6 @@ def diff(f1, f2, debug=False):
         y2 = np.array([y[1] for y in fy])
         x = np.array(fx)
         draw_graph([(y1, x), (y2, x)])
-        print(integral)
     return integral
 
 

@@ -169,6 +169,50 @@ class Line(Art):
         else:
             super().add(ax)
 
+
+class Polygon(Art):
+    def __init__(self, points, isClosed=True):
+        super().__init__()
+        self.points = points
+        self.isClosed = isClosed
+
+    def apply(self, T):
+        self.points = T.apply(self.points)
+
+    def copy(self):
+        return Polygon(self.points, self.isClosed)
+
+    def add(self, ax):
+        if len(self.points) > 0 :
+            x0 = self.points[0][0]
+            y0 = self.points[0][1]
+
+            for i in range (1, len(self.points)):
+                x1 = self.points[i][0]
+                y1 = self.points[i][1]
+                ax.plot([x0, x1], [y0, y1], color=self.color)
+                x0 = x1
+                y0 = y1
+
+            if self.isClosed:
+                l = len(self.points)
+                x0 = self.points[l-1][0]
+                y0 = self.points[l-1][1]
+                x1 = self.points[0][0]
+                y1 = self.points[0][1]
+                ax.plot([x0, x1], [y0, y1], color=self.color)
+
+    def area(self, quary_region):
+        return Pixel.area(polygon=self, qr=quary_region)
+
+    def grad_area(self, qr):
+        return Pixel.grad_area(self, qr)
+
+    def get_centroid(self):
+        return np.mean(self.points, axis=0)
+
+
+
 class Circle(Art):
     def __init__(self, center, radius):
         super().__init__()
@@ -389,90 +433,49 @@ class PieceWiseBezier(Art):
             self.split_bezier_in_parts(i, factor)
 
 
-class Polygon(Art):
-    def __init__(self, points, isClosed=True):
+class ArtGrp(Art):
+    def __init__(self, list):
         super().__init__()
-        self.points = points
-        self.isClosed = isClosed
+        self.arts = []
+        for l in list:
+            self.arts.append(PieceWiseBezier(l))
+
+    def keep(self, index):
+        if 0 <= index < len(self.arts):
+            self.arts = [self.arts[index]]
+
+    def add(self, ax):
+        for art in self.arts:
+            art.add(ax)
+
+    def set_color(self, rgb):
+        for art in self.arts:
+            art.set_color(rgb)
 
     def apply(self, T):
-        self.points = T.apply(self.points)
+        for i in range(len(self.arts)):
+            self.arts[i].apply(T)
+        return self
 
-    def copy(self):
-        return Polygon(self.points, self.isClosed)
+    def no_of_arts(self):
+        return len(self.arts)
 
-    def add(self, ax):
-        if len(self.points) > 0 :
-            x0 = self.points[0][0]
-            y0 = self.points[0][1]
+    def get_vertices(self):
+        vertices = []
+        for art in self.arts:
+            vertices.append(art.get_vertices())
+        return vertices
 
-            for i in range (1, len(self.points)):
-                x1 = self.points[i][0]
-                y1 = self.points[i][1]
-                ax.plot([x0, x1], [y0, y1], color=self.color)
-                x0 = x1
-                y0 = y1
-
-            if self.isClosed:
-                l = len(self.points)
-                x0 = self.points[l-1][0]
-                y0 = self.points[l-1][1]
-                x1 = self.points[0][0]
-                y1 = self.points[0][1]
-                ax.plot([x0, x1], [y0, y1], color=self.color)
-
-    def area(self, quary_region):
-        return Pixel.area(polygon=self, qr=quary_region)
-
-    def grad_area(self, qr):
-        return Pixel.grad_area(self, qr)
+    def get_art(self, index):
+        assert (0 <= index < len(self.arts))
+        return self.arts[index]
 
     def get_centroid(self):
-        return np.mean(self.points, axis=0)
+        centers = np.zeros(shape=(len(self.arts), 2))
+        for i in range(len(self.arts)):
+            centers[i] = self.arts[i].get_centroid()
+        return np.mean(centers, axis=0)
 
-
-class Function(Art):
-    def __init__(self, fx, clip_rect = None):
-        super().__init__()
-        self.Fx = fx
-        self.clip = clip_rect if clip_rect else Rectangle([0,0], [WIDTH*100, HEIGHT*100])
-
-    def draw_in_range(self,ax, left, right, alpha = None):
-        x = []
-        y = []
-        for i in range(int(left), int(right)):
-            fx = self.Fx(float(i))
-            if self.clip.get_bottom_left()[1] <= fx <= self.clip.get_top_right()[1]:
-                y.append(fx)
-                x.append(i)
-        ax.plot(x, y, color=self.color, alpha=alpha if alpha else self.alpha)
-        return x, y
-
-    def add(self, ax):
-        if self.diffuse:
-            self.add_diffuse(ax)
-        else:
-            self.draw_in_range(ax, self.clip.get_bottom_left()[0], self.clip.get_top_right()[0])
-
-    def add_diffuse(self, ax):
-        x, y = self.draw_in_range(ax, self.clip.get_bottom_left()[0], self.clip.get_top_right()[0], 0.01)
-        DIV = len(x)
-        W = 4
-        R = 1
-        width = 1
-        a = 0
-        for t in range(1, int(DIV/2)):
-            a = a + self.alpha * 0.01
-            if a <= self.alpha:
-                if width < W:
-                    width = width + t / R
-                ax.plot(x[t:DIV-t], y[t:DIV-t], color=self.color, alpha=self.alpha * 0.01, linewidth=width)
-            else:
-                break
-
-
-# class Transform:
-#     def __init__(self):
 
 class Translate:
     def __init__(self, delta):
