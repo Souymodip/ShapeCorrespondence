@@ -26,4 +26,18 @@ We will explore different ideas
       4.b. A Neural Network is concieved which models the classifier. The neural network is trained in <b><i> Discriminator.py </i></b>.
 
       4.c. The trained model is used to measure the value of </t><a href="https://www.codecogs.com/eqnedit.php?latex=f_1&space;\sim&space;f_2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f_1&space;\sim&space;f_2" title="f_1 \sim f_2" /></a>
+      
+      <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/image2.png" alt="" width="360" height="250">
+      
+      <br>
+      
+      <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/image3.png" alt="" width="360" height="250">
+      
+      <br>
+      
+      <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/image4.png" alt="" width="360" height="250">
+      
+      <br>
+      
+      <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/image5.png" alt="" width="400" height="250">
      
