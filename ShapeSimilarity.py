@@ -1,10 +1,11 @@
 import numpy as np
 import Art
-import testsLevel2 as testsuite
+import testsLevel1 as testsuite
 import copy
 import matplotlib.pyplot as plt
 import DFT
 import FunctionSimilarity
+import LPMatching
 
 
 ERROR = 1.e-12
@@ -55,21 +56,40 @@ def piecewise_bezier_to_polygon(art):
     return np.array(polygon)
 
 
+def closed_poly_to_turn_v_lenght(polygon):
+    assert(len(polygon) > 2)
+    radians, length = np.zeros((len(polygon) + 1), dtype=float), np.zeros((len(polygon) + 1), dtype=float)
+    radians[0] = turn_angle(polygon[-1], polygon[0], polygon[1])
+    length[0] = 0.0
+
+    for i in range(1, len(polygon) + 1):
+        p0 = polygon[i - 1]
+        p1 = polygon[i%len(polygon)]
+        p2 = polygon[(i + 1) % len(polygon)]
+
+        radians[i] = turn_angle(p0, p1, p2)
+        length[i] = length[i-1] + np.linalg.norm(p1 - p0)
+    return radians, length
+
+
 # polygon is a counter clockwise sequence of vertices
 def poly_to_turn_v_length(polygon, closed=True):
     assert (len(polygon) > 2)
-    radians, length = np.zeros((len(polygon)), dtype=float), np.zeros((len(polygon)), dtype=float)
-    for i in range(len(polygon)):
-        p0 = polygon[i-1]
-        p1 = polygon[i]
-        p2 = polygon[(i+1) % polygon.shape[0]]
-
-        if i != 0:
-            length[i] = length[i-1] + np.linalg.norm(p1 - p2)
-
-        if closed or (i != 0 and i != len(polygon)-1): # first and last have zero
+    if closed:
+        return closed_poly_to_turn_v_lenght(polygon)
+    else:
+        radians, length = np.zeros((len(polygon)), dtype=float), np.zeros((len(polygon)), dtype=float)
+        length[0] = 0.0
+        radians[0] = 0.0
+        for i in range(1, len(polygon)-1):
+            p0 = polygon[i-1]
+            p1 = polygon[i]
+            p2 = polygon[(i+1)]
+            length[i] = length[i-1] + np.linalg.norm(p1 - p0)
             radians[i] = turn_angle(p0, p1, p2)
-    return radians, length
+        length[-1] = length[-2] + np.linalg.norm(polygon[-2] - polygon[-1])
+        radians[-1] = 0.0
+        return radians, length
 
 
 def dft_descriptor_diff(poly1, i, poly2, j):
@@ -120,15 +140,15 @@ def get_min(mat):
     return min_ind, mat[min_ind]
 
 
-def marching(poly1, poly2, iter, draw, debug=False):
+def marching(poly1, poly2, iter, draw=None):
     count = 0
     polygon1, polygon2 = copy.deepcopy(poly1), copy.deepcopy(poly2)
-    mat = cut_and_measure(polygon1, polygon2, debug)
+    mat = cut_and_measure(polygon1, polygon2, draw)
     ret = []
     while count < iter:
         count = count + 1
         min_ind, min_val = get_min(mat)
-        if debug:
+        if draw:
             print("Min[{}] := {}".format(min_ind, min_val))
         ret.append([min_ind, min_val[0]])
         mat[min_ind] = np.inf
@@ -175,6 +195,8 @@ def test_at(poly1, poly2, i, j, draw):
     a1, d1 = poly_to_turn_v_length(sub_poly1, closed=False)
     a2, d2 = poly_to_turn_v_length(sub_poly2, closed=False)
 
+    m12
+
     d1 = d1/d1[-1]
     d2 = d2/d2[-1]
     fs = [(a1, d1), (a2, d2)]
@@ -200,15 +222,13 @@ def measure(art1, art2, d):
         draw_polygon(n_p1, d)
         draw_polygon(n_p2, d)
 
-    # if d: test_at(n_p1, n_p2, 6, 4, d)
-
-    return marching(poly1=polygon1, poly2=polygon2, iter=1, draw=d)
-
+    if d: test_at(n_p1, n_p2, 26, 23, d)
+    # return marching(poly1=n_p1, poly2=n_p2, iter=1, draw=d)
 
 
 def main():
     d = Art.Draw()
-    art1, art2 = testsuite.get_test(5)
+    art1, art2 = testsuite.get_test(4)
     measure(art1, art2, d)
     d.draw()
 

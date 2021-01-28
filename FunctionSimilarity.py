@@ -2,12 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def draw_graph(fs):
+def draw_graph(fs, last_scatter=False):
     for i in range(len(fs)):
         f = fs[i]
         ys, xs = f
         assert (xs.shape[0] == ys.shape[0])
-        if i != len(fs) - 1 or i <= 1:
+        if not last_scatter or (i != len(fs) - 1 or i <= 1):
             plt.plot(xs, ys, 'o-')
         else:
             plt.scatter(xs, ys)
@@ -18,6 +18,7 @@ def y_at(y_, y, x_, x, x_at):
     if x == x_:
         return y
     return y_ + (y - y_) * (x_at - x_) / (x - x_)
+
 
 def merge(ys1, xs1, ys2, xs2):
     i, j = 0, 0
@@ -60,7 +61,7 @@ def merge(ys1, xs1, ys2, xs2):
         else:
             i = i + 1
             j = j + 1
-    return ys, xs
+    return np.array(ys), np.array(xs)
 
 
 def enclosed_area(f1, f2, debug):
@@ -113,7 +114,6 @@ def main():
     xs = np.array(xs)
     ys0 = np.array([y[0] for y in ys])
     ys1 = np.array([y[1] for y in ys])
-
 
     draw_graph([(ys0, xs), (ys1, xs)])
 
