@@ -17,3 +17,13 @@ We will explore different ideas
      
      Run <b><i>ShapeSimilarity.py</i></b> to see an example.
 
+4. Bringing shape similarity with Neural Networks: The task at hand is to measure the degree of similarity of curvature-v-length graph of two shapes. Formally, 
+
+      </t><a href="https://www.codecogs.com/eqnedit.php?latex=f_1&space;\sim&space;f_2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f_1&space;\sim&space;f_2" title="f_1 \sim f_2" /></a> is the measure of similairty between two functions. This is achieved in following steps
+      
+      4.a. A training set is created containing various perturbation of <a href="https://www.codecogs.com/eqnedit.php?latex=f_1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f_1" title="f_1" /></a>. This can be found in <b><i> Generator.py </b></i>
+      
+      4.b. A Neural Network is concieved which models the classifier. The neural network is trained in <b><i> Discriminator.py </i></b>.
+
+      4.c. The trained model is used to measure the value of </t><a href="https://www.codecogs.com/eqnedit.php?latex=f_1&space;\sim&space;f_2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f_1&space;\sim&space;f_2" title="f_1 \sim f_2" /></a>
+     
