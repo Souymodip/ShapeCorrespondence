@@ -151,18 +151,18 @@ def test(discriminator, f):
 def main():
     def get_f():
         d = Art.Draw()
-        # art1, art2 = testsuite.get_test(4)
-        # d.add_art(art1)
+        art1, art2 = testsuite.get_test(4)
+        d.add_art(art1)
         # d.add_art(art2)
-        # _, art3 = testsuite.get_test(5)
-        # _, art4 = testsuite.get_test(6)
-        # _, art5 = testsuite.get_test(7)
+        _, art3 = testsuite.get_test(5)
+        _, art4 = testsuite.get_test(6)
+        _, art5 = testsuite.get_test(7)
         art7, art6 = testsuite.get_test(3)
         # d.add_art(art3)
         # d.add_art(art4)
-        # d.add_art(art5)
-        d.add_art(art6)
-        d.add_art(art7)
+        d.add_art(art5)
+        # d.add_art(art6)
+        # d.add_art(art7)
         d.draw()
 
         def get(art):
@@ -173,12 +173,12 @@ def main():
             d1 = d1/d1[-1]
             return a1, d1
 
-        return [ get(art6), get(art7)]
-        # return [get(art1), get(art2), get(art3), get(art4), get(art5), get(art6), get(art7)]
+        # return [ get(art6), get(art7)]
+        return [get(art1), get(art2), get(art3), get(art4), get(art5), get(art6), get(art7)]
 
     l = get_f()
     y1, x1 = l[0]
-    y2, x2 = l[1]
+    y2, x2 = l[4]
 
     m_y, m_x = fs.merge(y1, x1, y2, x2)
 
@@ -188,13 +188,13 @@ def main():
 
     discriminator = train_for((y1, m_x))
 
-    print("With Self: expectation perfect match")
+    print("With Self: expectating perfect match")
     test(discriminator, (y1, m_x))
 
-    print("\nWith Random Noice: expectation perfect mis-match")
+    print("\nWith Random Noice: expectating perfect mis-match")
     test(discriminator, gen.random(m_x.size, np.min(y1), np.max(y1)))
 
-    print("\nWith non-affine transform: Expectation high confidence of match")
+    print("\nWith non-affine transform: Expectating high confidence of match")
     test(discriminator, (y2, m_x))
     test(discriminator, perturb((y1, m_x)))
 
