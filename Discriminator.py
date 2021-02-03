@@ -7,6 +7,7 @@ import testsLevel1 as testsuite
 import ShapeSimilarity as ss
 import FunctionSimilarity as fs
 import Art
+import FunctionTransform as ft
 
 
 th.manual_seed(111)
@@ -166,12 +167,7 @@ def main():
         d.draw()
 
         def get(art):
-            importance_angle = 15
-            polygon = ss.piecewise_bezier_to_polygon(art=art)
-            n_p = ss.squint(polygon, True, np.deg2rad(importance_angle))
-            a1, d1 = ss.poly_to_turn_v_length(n_p, closed=True)
-            d1 = d1/d1[-1]
-            return a1, d1
+            return ft.art_to_function(art)
 
         # return [ get(art6), get(art7)]
         return [get(art1), get(art2), get(art3), get(art4), get(art5), get(art6), get(art7)]
@@ -198,7 +194,7 @@ def main():
     test(discriminator, (y2, m_x))
     test(discriminator, perturb((y1, m_x)))
 
-    fs.draw_graph([(y1, m_x), (y2, m_x)])
+    ft.draw_graph([(y1, m_x), (y2, m_x)])
 
 
 if __name__ == '__main__':

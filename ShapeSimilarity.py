@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import DFT
 import FunctionSimilarity
 import LPMatching
-
+import FunctionTransform as ft
 
 ERROR = 1.e-12
 def is_diff(p1, p2):
@@ -20,19 +20,6 @@ def sub(vec, l, size):
         return np.append(vec[l:], vec[: l + size - vec.shape[0]], axis=0)
 
 
-# radian at p1
-def turn_angle(p0, p1, p2):
-    a, b = p1 - p0, p2 - p1
-
-    if np.linalg.norm(a) * np.linalg.norm(b) == 0:
-        return 0.0
-    else:
-        # assert (np.linalg.norm(a) * np.linalg.norm(b) > 0 )
-        sin = np.cross(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-        sin = 1 if sin > 1 else (-1 if sin < -1 else sin)
-        return np.arcsin(sin)
-
-
 def draw_polygon(polygon, d, color =(0, 0, 0), open = False):
     iter_len = polygon.shape[:1][0] if not open else polygon.shape[:1][0] - 1
     for i in range(iter_len):
@@ -44,60 +31,12 @@ def draw_polygon(polygon, d, color =(0, 0, 0), open = False):
         d.add_art(l)
 
 
-def piecewise_bezier_to_polygon(art):
-    polygon = []
-    for b in art.get_beziers():
-        ex = b.get_extremes()
-        if len(polygon) == 0 or is_diff(polygon[-1], b.controls[0]):
-            polygon.append(b.controls[0])
-        for e in ex:
-            if len(polygon) == 0 or is_diff(polygon[-1], e):
-                polygon.append(e)
-    return np.array(polygon)
-
-
-def closed_poly_to_turn_v_lenght(polygon):
-    assert(len(polygon) > 2)
-    radians, length = np.zeros((len(polygon) + 1), dtype=float), np.zeros((len(polygon) + 1), dtype=float)
-    radians[0] = turn_angle(polygon[-1], polygon[0], polygon[1])
-    length[0] = 0.0
-
-    for i in range(1, len(polygon) + 1):
-        p0 = polygon[i - 1]
-        p1 = polygon[i%len(polygon)]
-        p2 = polygon[(i + 1) % len(polygon)]
-
-        radians[i] = turn_angle(p0, p1, p2)
-        length[i] = length[i-1] + np.linalg.norm(p1 - p0)
-    return radians, length
-
-
-# polygon is a counter clockwise sequence of vertices
-def poly_to_turn_v_length(polygon, closed=True):
-    assert (len(polygon) > 2)
-    if closed:
-        return closed_poly_to_turn_v_lenght(polygon)
-    else:
-        radians, length = np.zeros((len(polygon)), dtype=float), np.zeros((len(polygon)), dtype=float)
-        length[0] = 0.0
-        radians[0] = 0.0
-        for i in range(1, len(polygon)-1):
-            p0 = polygon[i-1]
-            p1 = polygon[i]
-            p2 = polygon[(i+1)]
-            length[i] = length[i-1] + np.linalg.norm(p1 - p0)
-            radians[i] = turn_angle(p0, p1, p2)
-        length[-1] = length[-2] + np.linalg.norm(polygon[-2] - polygon[-1])
-        radians[-1] = 0.0
-        return radians, length
-
-
 def dft_descriptor_diff(poly1, i, poly2, j):
     piece_size = max(poly1.shape[0], poly2.shape[0])
     dft_dim = piece_size
 
     def vectorize(polygon, dimensions):
-        angle, distance = poly_to_turn_v_length(polygon, closed=False)
+        angle, distance = ft.poly_to_turn_v_length(polygon, closed=False)
         return DFT.DFT_SIG(angle, distance, dimensions)
 
     sub_poly1, sub_poly2 = sub(poly1, i, piece_size), sub(poly2, j, piece_size)
@@ -106,8 +45,8 @@ def dft_descriptor_diff(poly1, i, poly2, j):
 
 def enclosed_area(poly1, i, poly2, j):
     sub_poly1, sub_poly2 = sub(poly1, i, poly1.shape[0]), sub(poly2, j, poly2.shape[0])
-    a1, d1 = poly_to_turn_v_length(sub_poly1, closed=False)
-    a2, d2 = poly_to_turn_v_length(sub_poly2, closed=False)
+    a1, d1 = ft.poly_to_turn_v_length(sub_poly1, closed=False)
+    a2, d2 = ft.poly_to_turn_v_length(sub_poly2, closed=False)
 
     d1 = d1/d1[-1]
     d2 = d2/d2[-1]
@@ -164,20 +103,20 @@ def marching(poly1, poly2, iter, draw=None): # list of pair of matching indexes 
     return ret
 
 
-def squint(polygon, is_closed, tolerance):
-    new_polygon = []
-    for i in range(len(polygon)):
-        if not is_closed and (i == 0 or i == len(polygon) - 1):
-            new_polygon.append(polygon[i])
-            continue
-        else:
-            p0 = polygon[(i + 1) % len(polygon)]
-            p1 = polygon[i]
-            p2 = polygon[i - 1]
-
-            if np.abs(turn_angle(p0, p1, p2)) >= tolerance:
-                new_polygon.append(p1)
-    return np.array(new_polygon)
+# def squint(polygon, is_closed, tolerance):
+#     new_polygon = []
+#     for i in range(len(polygon)):
+#         if not is_closed and (i == 0 or i == len(polygon) - 1):
+#             new_polygon.append(polygon[i])
+#             continue
+#         else:
+#             p0 = polygon[(i + 1) % len(polygon)]
+#             p1 = polygon[i]
+#             p2 = polygon[i - 1]
+#
+#             if np.abs(ft.turn_angle(p0, p1, p2)) >= tolerance:
+#                 new_polygon.append(p1)
+#     return np.array(new_polygon)
 
 
 def test_at(poly1, poly2, i, j, draw):
@@ -192,8 +131,8 @@ def test_at(poly1, poly2, i, j, draw):
     draw_polygon(poly2, draw)
 
     sub_poly1, sub_poly2 = sub(poly1, i, poly1.shape[0]), sub(poly2, j, poly2.shape[0])
-    a1, d1 = poly_to_turn_v_length(sub_poly1, closed=False)
-    a2, d2 = poly_to_turn_v_length(sub_poly2, closed=False)
+    a1, d1 = ft.poly_to_turn_v_length(sub_poly1, closed=False)
+    a2, d2 = ft.poly_to_turn_v_length(sub_poly2, closed=False)
 
     d1 = d1/d1[-1]
     d2 = d2/d2[-1]
@@ -208,9 +147,9 @@ def measure(art1, art2, d):
     art1.set_color((0, 0, 100))
     art2.set_color((0, 0, 100))
 
-    polygon1, polygon2 = piecewise_bezier_to_polygon(art=art1), piecewise_bezier_to_polygon(art=art2)
+    polygon1, polygon2 = ft.piecewise_bezier_to_polygon(art=art1), ft.piecewise_bezier_to_polygon(art=art2)
     importance_angle = 10
-    n_p1, n_p2 = squint(polygon1, True, np.deg2rad(importance_angle)), squint(polygon2, True, np.deg2rad(importance_angle))
+    n_p1, n_p2 = ft.squint(polygon1, True, np.deg2rad(importance_angle)), ft.squint(polygon2, True, np.deg2rad(importance_angle))
 
     if d:
         print(len(polygon1), len(polygon2))

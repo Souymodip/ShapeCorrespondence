@@ -1,68 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-def draw_graph(fs, last_scatter=False):
-    for i in range(len(fs)):
-        f = fs[i]
-        ys, xs = f
-        assert (xs.shape[0] == ys.shape[0])
-        if not last_scatter or (i != len(fs) - 1 or i <= 1):
-            plt.plot(xs, ys, 'o-')
-        else:
-            plt.scatter(xs, ys)
-    plt.show()
+import FunctionTransform as ft
 
 
 def y_at(y_, y, x_, x, x_at):
     if x == x_:
         return y
     return y_ + (y - y_) * (x_at - x_) / (x - x_)
-
-
-
-def merge_along_x(fs):
-    xs = set()
-    for f in fs:
-        xs = xs + set(f[1])
-
-    xs = sorted(xs)
-
-    def get_enclosing_range(f, val_x, index):
-        y, x = f
-        assert (index < len(x))
-        i = index
-        val_y = None
-        while i < len(index) and x[i] < val_x:
-            i = i + 1
-        if i == len(index):
-            val_y = y[-1]
-        elif x[i] == val_x:
-            val_y = y[i]
-        else:
-            if i == 0:
-                assert(x[i] > 0)
-                val_y = 0 + (y[i] - 0) * (val_x - 0) / (x[i] - 0)
-            else:
-                assert (x[i] > x[i-1])
-                val_y = y[i-1] + (y[i] - y[i-1]) * (val_x - x[i-1]) / (x[i] - x[i-1])
-        return val_y, i
-
-    indexes = np.zeros((len(fs)), dtype=int)
-    ys = [[] for i in range(len(fs))]
-    for x in xs:
-        for i in range(len(fs)):
-            ind_i = indexes[i]
-            f_i = fs[i]
-            if x == f_i[1][ind_i]:
-                ys[i].append(f_i[0][ind_i])
-                indexes[i] = indexes[i] + 1
-            else:
-                y, index = get_enclosing_range(f_i, x, ind_i)
-                assert(y)
-                ys[i].append(y)
-                indexes[i] = index
-    return ys, xs
 
 
 def merge(ys1, xs1, ys2, xs2):
@@ -147,7 +91,7 @@ def diff(f1, f2, debug=False):
         y1 = np.array([y[0] for y in fy])
         y2 = np.array([y[1] for y in fy])
         x = np.array(fx)
-        draw_graph([(y1, x), (y2, x)])
+        ft.draw_graph([(y1, x), (y2, x)])
     return integral
 
 
@@ -160,7 +104,7 @@ def main():
     ys0 = np.array([y[0] for y in ys])
     ys1 = np.array([y[1] for y in ys])
 
-    draw_graph([(ys0, xs), (ys1, xs)])
+    ft.draw_graph([(ys0, xs), (ys1, xs)])
 
     print(ys0)
     print(ys1)
@@ -177,4 +121,4 @@ def main():
     print(y1)
     print(y2)
     print(x)
-    draw_graph([(y1, x), (y2, x)])
+    ft.draw_graph([(y1, x), (y2, x)])
