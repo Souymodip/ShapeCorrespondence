@@ -5,6 +5,7 @@ import math
 import Pixel
 import numpy as np
 import copy
+from enum import Enum
 
 WIDTH = 12
 HEIGHT = 10
@@ -49,6 +50,17 @@ def quad_roots(a, b, c):
         return np.array([])
 
 
+class Type(Enum):
+    ART   = 0
+    LINE  = 1
+    RECTANGLE = 2
+    POLYGON = 3
+    CIRCLE = 4
+    BEZIER = 5
+    PIECEWISE_BEZIER = 6
+    ART_GROUP = 7
+
+
 class Art:
     def __init__(self):
         self.point_buffer = ([], [])
@@ -57,6 +69,9 @@ class Art:
         self.fill_color = '#FFFFFF'
         self.toFill = False
         self.diffuse = False
+
+    def get_type(self):
+        return Type.ART
 
     def set_point_buffer(self, xs, ys):
         self.point_buffer = xs, ys
@@ -97,11 +112,15 @@ class Art:
             ax.plot(self.point_buffer[0], self.point_buffer[1], color=self.color, alpha=self.alpha)
 
 
+
 class Rectangle(Art):
     def __init__(self, top_left, bottom_right):
         super().__init__()
         super().set_point_buffer([top_left[0], bottom_right[0], bottom_right[0], top_left[0], top_left[0]], \
                                [top_left[1], top_left[1], bottom_right[1], bottom_right[1], top_left[1]])
+
+    def get_type(self):
+        return Type.RECTANGLE
 
     def get_bottom_left(self):
         if len(self.point_buffer[0]) == 5 :
@@ -148,6 +167,9 @@ class Line(Art):
         super().__init__()
         super().set_point_buffer([start[0], end[0]], [start[1], end[1]])
 
+    def get_type(self):
+        return Type.LINE
+
     def add_diffuse(self, ax):
         x0, y0 = self.point_buffer[0][0], self.point_buffer[1][0]
         x1, y1 = self.point_buffer[0][1], self.point_buffer[1][1]
@@ -175,6 +197,9 @@ class Polygon(Art):
         super().__init__()
         self.points = points
         self.isClosed = isClosed
+
+    def get_type(self):
+        return Type.POLYGON
 
     def apply(self, T):
         self.points = T.apply(self.points)
@@ -219,6 +244,9 @@ class Circle(Art):
         self.center = center
         self.radius = radius
 
+    def get_type(self):
+        return Type.CIRCLE
+
     def add(self,ax):
         if self.toFill:
             c = plt.Circle((self.center[0], self.center[1]), radius=self.radius, color=self.fill_color, alpha=self.alpha)
@@ -234,6 +262,9 @@ class Bezier(Art):
         self.show_controls = show_control
         self.DISCRETE = 10
         assert(self.DISCRETE > 0)
+
+    def get_type(self):
+        return Type.BEZIER
 
     def apply(self, T):
         self.controls = T.apply(self.controls)
@@ -333,6 +364,9 @@ class PieceWiseBezier(Art):
     def __int__(self, beziers):
         super().__init__()
         self.beziers = beziers
+
+    def get_type(self):
+        return Type.PIECEWISE_BEZIER
 
     def __init__(self, anchors, is_closed=True, show_control=False):
         super().__init__()
@@ -439,6 +473,9 @@ class ArtGrp(Art):
         self.arts = []
         for l in list:
             self.arts.append(PieceWiseBezier(l))
+
+    def get_type(self):
+        return Type.ART_GROUP
 
     def keep(self, index):
         if 0 <= index < len(self.arts):

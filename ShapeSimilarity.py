@@ -1,6 +1,6 @@
 import numpy as np
 import Art
-import testsLevel1 as testsuite
+import testLevel4 as testsuite
 import copy
 import matplotlib.pyplot as plt
 import DFT
@@ -140,7 +140,7 @@ def get_min(mat):
     return min_ind, mat[min_ind]
 
 
-def marching(poly1, poly2, iter, draw=None):
+def marching(poly1, poly2, iter, draw=None): # list of pair of matching indexes and the corresponding measure
     count = 0
     polygon1, polygon2 = copy.deepcopy(poly1), copy.deepcopy(poly2)
     mat = cut_and_measure(polygon1, polygon2, draw)
@@ -195,8 +195,6 @@ def test_at(poly1, poly2, i, j, draw):
     a1, d1 = poly_to_turn_v_length(sub_poly1, closed=False)
     a2, d2 = poly_to_turn_v_length(sub_poly2, closed=False)
 
-    m12
-
     d1 = d1/d1[-1]
     d2 = d2/d2[-1]
     fs = [(a1, d1), (a2, d2)]
@@ -206,11 +204,12 @@ def test_at(poly1, poly2, i, j, draw):
 
 
 def measure(art1, art2, d):
+    """list containing a pair of matching indexes and the corresponding measure which is least among all matches """
     art1.set_color((0, 0, 100))
     art2.set_color((0, 0, 100))
 
     polygon1, polygon2 = piecewise_bezier_to_polygon(art=art1), piecewise_bezier_to_polygon(art=art2)
-    importance_angle = 15
+    importance_angle = 10
     n_p1, n_p2 = squint(polygon1, True, np.deg2rad(importance_angle)), squint(polygon2, True, np.deg2rad(importance_angle))
 
     if d:
@@ -222,13 +221,17 @@ def measure(art1, art2, d):
         draw_polygon(n_p1, d)
         draw_polygon(n_p2, d)
 
-    if d: test_at(n_p1, n_p2, 26, 23, d)
-    # return marching(poly1=n_p1, poly2=n_p2, iter=1, draw=d)
+    # if d: test_at(n_p1, n_p2, 26, 23, d)
+    return marching(poly1=n_p1, poly2=n_p2, iter=10, draw=d)
 
 
 def main():
     d = Art.Draw()
-    art1, art2 = testsuite.get_test(4)
+    ags = testsuite.get_test(0)
+    art1, art2 = ags[0], ags[2]
+    art1.apply(Art.Translate([-10, 0]))
+    art2.apply(Art.Translate([10, 0]))
+
     measure(art1, art2, d)
     d.draw()
 

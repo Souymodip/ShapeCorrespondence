@@ -20,6 +20,51 @@ def y_at(y_, y, x_, x, x_at):
     return y_ + (y - y_) * (x_at - x_) / (x - x_)
 
 
+
+def merge_along_x(fs):
+    xs = set()
+    for f in fs:
+        xs = xs + set(f[1])
+
+    xs = sorted(xs)
+
+    def get_enclosing_range(f, val_x, index):
+        y, x = f
+        assert (index < len(x))
+        i = index
+        val_y = None
+        while i < len(index) and x[i] < val_x:
+            i = i + 1
+        if i == len(index):
+            val_y = y[-1]
+        elif x[i] == val_x:
+            val_y = y[i]
+        else:
+            if i == 0:
+                assert(x[i] > 0)
+                val_y = 0 + (y[i] - 0) * (val_x - 0) / (x[i] - 0)
+            else:
+                assert (x[i] > x[i-1])
+                val_y = y[i-1] + (y[i] - y[i-1]) * (val_x - x[i-1]) / (x[i] - x[i-1])
+        return val_y, i
+
+    indexes = np.zeros((len(fs)), dtype=int)
+    ys = [[] for i in range(len(fs))]
+    for x in xs:
+        for i in range(len(fs)):
+            ind_i = indexes[i]
+            f_i = fs[i]
+            if x == f_i[1][ind_i]:
+                ys[i].append(f_i[0][ind_i])
+                indexes[i] = indexes[i] + 1
+            else:
+                y, index = get_enclosing_range(f_i, x, ind_i)
+                assert(y)
+                ys[i].append(y)
+                indexes[i] = index
+    return ys, xs
+
+
 def merge(ys1, xs1, ys2, xs2):
     i, j = 0, 0
     ys, xs = [], []
