@@ -201,6 +201,13 @@ class Polygon(Art):
     def get_type(self):
         return Type.POLYGON
 
+    def get_vertex(self, id):
+        assert id < len(self.points)
+        return self.points[id]
+
+    def no_of_vertices(self):
+        return len(self.points)
+
     def apply(self, T):
         self.points = T.apply(self.points)
 
@@ -285,7 +292,7 @@ class Bezier(Art):
             p = rotate_points(points=p, radian=-radian, about=p[0])
         return Bezier(p)
 
-    def get_extremes(self):
+    def get_extremes_t(self):
         p = self.aligned().controls
 
         a = (3*(-p[0] + 3*p[1] -3*p[2] + p[3]))[1]
@@ -300,7 +307,10 @@ class Bezier(Art):
             r = np.sort(r)
             if r.size == 0:
                 r = np.array([0]) if p[0][1] > p[3][1] else np.array([1])
+        return r
 
+    def get_extremes(self):
+        r = self.get_extremes_t()
         return np.array([self.point_at(t) for t in r])
 
     def add(self, ax):
@@ -503,6 +513,9 @@ class ArtGrp(Art):
             vertices.append(art.get_vertices())
         return vertices
 
+    def get_arts(self):
+        return self.arts
+
     def get_art(self, index):
         assert (0 <= index < len(self.arts))
         return self.arts[index]
@@ -567,12 +580,13 @@ class Draw:
 
     def add_art(self, art):
         self.art_buffer.append(art)
+        return len(self.art_buffer) - 1
 
     def add_raster(self, anp, bot_left = (0, 0), scale=1):
         assert(len(anp.shape) == 3)
         self.rasters.append((anp, bot_left, scale))
 
-    def draw (self):
+    def draw (self, mask=set()):
         fig = plt.figure(figsize=(self.WIDTH, self.HEIGHT))
         ax = fig.add_subplot()
         plt.xlim(-self.SCALE*self.WIDTH, self.SCALE*self.WIDTH)
@@ -580,8 +594,10 @@ class Draw:
         plt.autoscale(False)
         boundary = [-SCALE*self.WIDTH, SCALE*self.WIDTH], [SCALE*self.HEIGHT, SCALE*self.HEIGHT]
         ax.plot(boundary[0],boundary[1], color='#000000', alpha=0)
-        for art in self.art_buffer:
-            art.add(ax)
+
+        for i in range(len(self.art_buffer)):
+            if i not in mask:
+                self.art_buffer[i].add(ax)
 
         for r, a, s in self.rasters:
             scx = np.zeros((r.shape[0] * r.shape[1]))
@@ -601,25 +617,80 @@ class Draw:
         plt.show()
 
 
-def draw_match(art1, art2, m, draw, window=1):
-    points1, points2 = art1.get_vertices(), art2.get_vertices()
-    for ij in m:
-        i,j = ij
-        c1 = Circle(points1[i], 0.2)
-        c2 = Circle(points2[j], 0.2)
-        c1.set_color((255,0 , 0))
-        c2.set_color((0,0, 255))
-        l = Line(points1[i], points2[j])
-        l.set_color((0,255,0))
-        draw.add_art(l)
-        draw.add_art(c1)
-        draw.add_art(c2)
-        bs = [art1.get_bezier(k) for k in range(i, i + window)]
-        for b in bs:
-            b.set_color((255, 255, 0))
-            draw.add_art(b)
+def draw_bbox(draw, bbox, color):
+    bot_left = bbox[0]
+    bot_right = [bbox[1][0], bbox[0][1]]
+    top_right = bbox[1]
+    top_left = [bbox[0][0], bbox[1][1]]
+    l1 = Line(bot_left, bot_right)
+    l1.set_color(color)
+    l2 = Line(bot_right, top_right)
+    l2.set_color(color)
+    l3 = Line(top_right, top_left)
+    l3.set_color(color)
+    l4 = Line(top_left, bot_left)
+    l4.set_color(color)
+    draw.add_art(l1)
+    draw.add_art(l2)
+    draw.add_art(l3)
+    draw.add_art(l4)
+    c = Circle(np.mean(bbox, axis=0), 0.2)
+    c.set_fill_color((255, 0, 0))
+    draw.add_art(c)
 
-        bs = [art2.get_bezier(k) for k in range(j, j + window)]
-        for b in bs:
-            b.set_color((0, 255, 255))
-            draw.add_art(b)
+
+def draw_match(point_list1, point_list2, pairs, d):
+    count = 0
+    for p, q in pairs:
+        count = count + 1
+        if (count-1) % 4 != 0: continue
+
+        c_i, c_j = point_list1[p%point_list1.shape[0]], point_list2[q%point_list2.shape[0]]
+        circ_i, circ_j = Circle(c_i, 0.2), Circle(c_j, 0.2)
+        circ_i.set_fill_color((255, 0, 0)), circ_j.set_fill_color((255, 0, 0))
+        d.add_art(circ_i), d.add_art(circ_j)
+
+        mid1, mid2 = (c_i / 3 + c_j * 2 / 3), (c_i * 2 / 3 + c_j / 3)
+        mid1[1], mid2[1] = mid1[1] + 5, mid2[1] + 5
+        b = Bezier([c_i, mid2, mid1, c_j])
+        b.set_color((100, 255, 255))
+        d.add_art(b)
+
+    return d
+
+
+def draw_curve(p1, p2, draw):
+    c1, c2 = Circle(p1, 0.2), Circle(p2, 0.2)
+    c1.set_fill_color((255, 0, 0)), c2.set_fill_color((255, 0, 0))
+    mid1, mid2 = (p1 / 3 + p2 * 2 / 3), (p1 * 2 / 3 + p2 / 3)
+    mid1[1], mid2[1] = mid1[1] + 5, mid2[1] + 5
+    b = Bezier([p1, mid2, mid1, p2])
+    b.set_color((255, 0, 255))
+    id1 = draw.add_art(c1)
+    id2 = draw.add_art(c2)
+    id3 = draw.add_art(b)
+    return [id1, id2, id3]
+
+
+def draw_match_grp(artGrp1, artGrp2, mat, d, threshold =0.8):
+    assert (mat.shape[0] == artGrp1.no_of_arts() and mat.shape[1] == artGrp2.no_of_arts)
+
+    d.add_art(artGrp1)
+    d.add_art(artGrp2)
+
+    for ij in np.ndindex(mat.shape):
+        i, j = ij
+        if mat[ij] > threshold:
+            a_i = artGrp1.get_art(i)
+            a_j = artGrp1.get_art(j)
+            bbox_i = a_i.get_bounding_box()
+            bbox_j = a_j.get_bounding_box()
+            draw_bbox(d, bbox_i, (0, 0, 255))
+            draw_bbox(d, bbox_j, (0, 0, 255))
+            c_i, c_j = np.mean(bbox_i, axis=0), np.mean(bbox_j, axis=0)
+            mid1, mid2 = (c_i / 3 + c_j * 2 / 3), (c_i * 2 / 3 + c_j / 3)
+            mid1[1], mid2[1] = mid1[1] + 5, mid2[1] + 5
+            b = Bezier([c_i, mid2, mid1, c_j])
+            b.set_color((255, 0, 255))
+            d.add_art(b)
+    return d

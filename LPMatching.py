@@ -1,9 +1,10 @@
 import numpy as np
-import copy
 from scipy.optimize import linprog
 import testsLevel1 as testsuite
 import ShapeSimilarity as ss
+import FunctionTransform as ft
 import Art
+import copy as cp
 
 
 def get_lhs(start, width, total):
@@ -38,7 +39,6 @@ def march(point_list1, point_list2, draw=None):
         j = k % col
         obj[k] = np.abs(np.linalg.norm(pl1[i] - c1) - np.linalg.norm(pl2[j] - c2))
 
-
     lhs_ineq = [np.ones(shape=(dim))]
     rhs_ineq = [len(pl1)]
 
@@ -69,6 +69,47 @@ def march(point_list1, point_list2, draw=None):
     return np.array(match, dtype=int)
 
 
+def solve_min_energy(mat, force_matching_list):
+    map = dict(force_matching_list)
+    left, right = mat.shape[0], mat.shape[1]
+    assert (left <= right)
+    obj = mat.flatten()
+
+    max_match = min(left, right)
+    lhs_ineq = [np.ones(shape=(left*right))]
+    rhs_ineq = [max_match]
+
+    def get_one_at(i, j):
+        k = np.zeros((left*right))
+        k[i*right + j] = 1.0
+        return k
+
+    lhs_eq = []
+    rhs_eq = []
+    for i in range(left):
+        if i in map:
+            j = map[i]
+            lhs_eq.append(get_one_at(i, j))
+        else:
+            lhs_eq.append(get_lhs(i, right, left*right))
+        rhs_eq.append(1.0)
+
+    bnd = [(0, 1.0) for i in range(left*right)]
+    opt = linprog(c=obj, A_ub=lhs_ineq, b_ub=rhs_ineq, A_eq=lhs_eq, b_eq=rhs_eq, bounds=bnd, method="revised simplex")
+
+    x = np.zeros(shape=(left, right))
+    match = []
+    for i in range(left):
+        for j in range(right):
+            opt_ij = opt.x[i * right + j]
+            if opt_ij > 0.5:
+                match.append([j, i])
+            x[j, i] = opt_ij
+
+    print(x)
+    return match
+
+
 def main():
     art1, art2 = testsuite.get_test(4)
     d = Art.Draw()
@@ -78,10 +119,10 @@ def main():
     d.add_art(art1)
     d.add_art(art2)
 
-    polygon1, polygon2 = ss.piecewise_bezier_to_polygon(art=art1), ss.piecewise_bezier_to_polygon(art=art2)
+    polygon1, polygon2 = ft.piecewise_bezier_to_polygon(art=art1), ft.piecewise_bezier_to_polygon(art=art2)
     importance_angle = 15
-    n_p1 = ss.squint(polygon1, True, np.deg2rad(importance_angle))
-    n_p2 = ss.squint(polygon2, True, np.deg2rad(importance_angle))
+    n_p1 = ft.squint(polygon1, True, np.deg2rad(importance_angle))
+    n_p2 = ft.squint(polygon2, True, np.deg2rad(importance_angle))
 
     match = march(point_list1=n_p1, point_list2=n_p2)
 

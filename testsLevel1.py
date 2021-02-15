@@ -249,4 +249,5 @@ def main_test(test):
     d.draw()
 
 
-# main_test(get_test(3))
+if __name__ == '__main__':
+    main_test(get_test(4))

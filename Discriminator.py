@@ -145,7 +145,6 @@ def test(discriminator, f):
     print("Test ...")
     t = th.Tensor(flatten((y, x)))
     out = discriminator(t)
-    print(out.detach())
     return out
 
 
@@ -184,15 +183,13 @@ def main():
 
     discriminator = train_for((y1, m_x))
 
-    print("With Self: expectating perfect match")
-    test(discriminator, (y1, m_x))
+    print("With Self: expectating perfect match.\n{}".format(test(discriminator, (y1, m_x))))
 
-    print("\nWith Random Noice: expectating perfect mis-match")
+    print("\nWith Random Noice: expectating perfect mis-match. \n {}".format(test(discriminator, gen.random(m_x.size, np.min(y1), np.max(y1)))))
     test(discriminator, gen.random(m_x.size, np.min(y1), np.max(y1)))
 
-    print("\nWith non-affine transform: Expectating high confidence of match")
-    test(discriminator, (y2, m_x))
-    test(discriminator, perturb((y1, m_x)))
+    print("\nWith non-affine transform: Expectating high confidence of match. "
+          "\n{}\n{}".format(test(discriminator, (y2, m_x)), test(discriminator, perturb((y1, m_x))) ))
 
     ft.draw_graph([(y1, m_x), (y2, m_x)])
 

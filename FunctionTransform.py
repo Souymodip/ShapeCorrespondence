@@ -69,7 +69,6 @@ def merge_along_x(fs):
 
 def change_suport(f, new_x):
     """ returns a function whose support is new_x"""
-    y, x = f
     new_y = []
     index = 0
     for x_val in new_x:
@@ -107,10 +106,14 @@ def turn_angle(p0, p1, p2):
         # assert (np.linalg.norm(a) * np.linalg.norm(b) > 0 )
         sin = np.cross(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
         sin = 1 if sin > 1 else (-1 if sin < -1 else sin)
-        return np.arcsin(sin)
+        t = np.arcsin(sin)
+        t = t if t >=0 else 2*np.pi - t
+        return t
 
 
 def squint(polygon, is_closed, tolerance):
+    if tolerance == 0.0:
+        return polygon
     new_polygon = []
     for i in range(len(polygon)):
         if not is_closed and (i == 0 or i == len(polygon) - 1):
@@ -139,7 +142,7 @@ def closed_poly_to_turn_v_lenght(polygon):
 
         radians[i] = turn_angle(p0, p1, p2)
         length[i] = length[i-1] + np.linalg.norm(p1 - p0)
-    return radians, length
+    return radians, length/length[-1]
 
 
 # polygon is a counter clockwise sequence of vertices
@@ -159,7 +162,15 @@ def poly_to_turn_v_length(polygon, closed=True):
             radians[i] = turn_angle(p0, p1, p2)
         length[-1] = length[-2] + np.linalg.norm(polygon[-2] - polygon[-1])
         radians[-1] = 0.0
-        return radians, length
+        return radians, length/length[-1]
+
+
+def roll(poly, amount):
+    amount = amount % poly.shape[0]
+    if amount == 0:
+        return poly
+    else:
+        return np.append(poly[amount:], poly[:amount], axis=0)
 
 
 def art_to_function(art, importance_angle = 15):
@@ -171,14 +182,16 @@ def art_to_function(art, importance_angle = 15):
     return a1, d1
 
 
+
 def main():
     a1, a2 = testsuite.get_test(1)
     d = Art.Draw()
     f1, f2 = art_to_function(a1), art_to_function(a2)
-    draw_graph([f1, f2])
-    d.add_art(a1)
-    d.add_art(a2)
-    d.draw()
+    # draw_graph([f1, f2])
+    # print(p)
+    # d.add_art(a1)
+    # d.add_art(a2)
+    # d.draw()
 
 
 if __name__ == '__main__':

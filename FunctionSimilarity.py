@@ -112,7 +112,7 @@ def main():
 
     print()
 
-    fy, fx, integral = enclosed_area((y1, x1), (y2, x2))
+    fy, fx, integral = enclosed_area((y1, x1), (y2, x2), debug=True)
 
     y1 = np.array([y[0] for y in fy])
     y2 = np.array([y[1] for y in fy])
