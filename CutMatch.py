@@ -8,6 +8,7 @@ import Art
 import D3Plot as D3
 import DFT as dft
 
+
 def double(f):
     y, x = f
     return np.append(y, y[:-1]), np.append(x, np.array(x[1:-1]) + x[-1])
@@ -45,10 +46,11 @@ class Cuts:
         curr_x = 0
 
         while index < len(self.poly) and curr_x < x_val:
-            index = index + 1
             curr_x = curr_x + np.linalg.norm(self.poly[index-1] - self.poly[index])
+            index = index + 1
 
-        assert index < len(self.poly)
+        if index == len(self.poly): index = 0
+
         ratio = (curr_x - x_val) / np.linalg.norm(self.poly[index-1] - self.poly[index])
         first = self.poly[index] * (1-ratio) + self.poly[index-1] * (ratio)
         new_poly = [first]
@@ -70,9 +72,6 @@ class Cuts:
 
             add_index = add_index + 1
         return Cut(np.array(new_poly), index, length, x_val)
-
-    def get_rand_cut(self, length):
-        return self.get_cut_at(np.random.rand() * self.total_length, length)
 
 
 def get_neighbourhood (cuts2, x_val2, cut_length):
@@ -139,7 +138,7 @@ class Cut_Match:
             diff.append(abs(dft.diff_poly(p1, p2, frac=1)))
         min_index = np.argmin(diff)
         min_x = self.stride * min_index
-        print("\tCut1 : {:.2f}, Cut2: {:.2f}, Diff := {:.3f}".format(cut.x_val, min_x, diff[min_index]))
+        print("\t\tCut1 : {:.2f}, Cut2: {:.2f}, Diff := {:.3f}".format(cut.x_val, min_x, diff[min_index]))
         return self.cuts2.get_cut_at(min_x, self.cut_length), diff[min_index]
 
     def neighbour_match(self, cut, intervals):
@@ -175,12 +174,14 @@ class Cut_Match:
 
     def rand_initial(self, times):
         min_cut1, min_cut2, min_val = None, None, np.inf
-        for i in range(times):
-            r_cut1 = self.cuts1.get_rand_cut(length=self.cut_length)
-            # r_cut1 = cuts1.get_cut_at(29.83, cut_length)
+        step = 2
+        rs = np.random.choice(int(self.cuts1.total_length/step), times, replace=True)
+        for r in rs:
+            r_cut1 = self.cuts1.get_cut_at(r*step, length=self.cut_length)
             ex_cut2, diff = self.extact_match(r_cut1)
             if min_val > diff:
                 min_cut1, min_cut2, min_val = r_cut1, ex_cut2, diff
+        print("\tInitalizing from Cut1:{}, Cut2:{}".format(min_cut1.x_val, min_cut2.x_val))
         return min_cut1, min_cut2
 
     def cut_match(self):
@@ -201,8 +202,9 @@ class Cut_Match:
 
         D3.draw_poly_index(polys)
 
-        match0 = match_internal(nexts1[0], nexts2[0])
-        D3.draw_polys(polys[:2], match0)
+        for i in range(int(len(polys)/2)):
+            match0 = match_internal(nexts1[i], nexts2[i])
+            D3.draw_polys([polys[2*i], polys[2*i + 1]], match0)
 
     def test(self):
         x1, x2 = 22.72, 20.00
@@ -222,7 +224,7 @@ class Cut_Match:
 if __name__ == '__main__':
     mm = MM.MatchMaker(importance_percentile=100)
     arts = ts.get_test(0)
-    id1, id2 = mm.add_art(arts[8]), mm.add_art(arts[6])
+    id1, id2 = mm.add_art(arts[0]), mm.add_art(arts[4])
     p1, p2 = mm.get_poly(id1), mm.get_poly(id2)
 
     cm = Cut_Match(p1, p2, stride=10, cut_length=20)
