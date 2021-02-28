@@ -88,8 +88,20 @@ def DFT(f, n, debug=False):
     f_y = sample(y, x, interval)
     if debug:
         ft.draw_graph([(f_y, np.arange(0.0, 1.0 + interval, interval)), f])
-
     return np.fft.fft(f_y)
+
+
+def low_pass_filter(f, sample, filter):
+    df = DFT(f, sample)
+    assert(len(df) % 2 == 1)
+    l = int(len(df)/2)
+    for i in range(l):
+        if i > filter:
+            df[i] = 0.0
+            df[l + i] = 0.0
+    idf = np.fft.ifft(df)
+    t = np.arange(0, 1, 1 / len(idf))
+    return np.absolute(idf), t
 
 
 def DFT_diff(art1, art2, sampling_rate=2, debug=False):
@@ -139,6 +151,82 @@ def test(art1, r=30):
     comp = int(len(dft1) / 2)
     imp1, imp2 = np.absolute(dft1)[:comp], np.absolute(dft2)[:comp]
     print(np.linalg.norm(imp1 - imp2))
+
+
+def low_pass(fft, frac):
+    data_count = len(fft)
+    freq = np.fft.fftfreq(data_count)
+    high_index = int(data_count/2)-1 if data_count % 2 == 0 else int(data_count/2)
+    high_freq = np.abs(freq[high_index])
+    for i in range(data_count):
+        if np.abs(freq[i]) > high_freq * frac:
+            fft[i] = 0.0 + 0.0j
+    return fft
+
+
+def poly_to_dft(poly, times):
+    def sample(poly, times):
+        assert times >= 1
+        new_y, new_x = [], []
+        for i in range(1, len(poly)):
+            for j in np.arange(0, 1 + 1/times, 1/times):
+                p = poly[i-1] *(1-j) + poly[i] * j
+                new_y.append(p[1]), new_x.append(p[0])
+        new_y.append(poly[-1][1]), new_x.append(poly[-1][0])
+        return np.array(new_y), np.array(new_x)
+
+    y, x = sample(poly, times)
+    complex_series = x + 1j * y
+    fft = np.fft.fft(complex_series)
+    # data_count = len(complex_series)
+    # freq = np.fft.fftfreq(data_count)
+    # ft.draw_graph([(np.real(fft), freq), (np.imag(fft), freq)])
+    return fft
+
+
+def pad(poly, length):
+    if len(poly) == length:
+        return poly
+    else:
+        add = length - len(poly)
+        add_inds = np.random.choice(len(poly), add, replace=True)
+        for i in add_inds: # not as intended
+            p_ = poly[i-1] if i > 0 else np.zeros((2))
+            p = poly[i]
+            new_p = 0.5 * p_ + 0.5 * p
+            poly = np.insert(poly, i, new_p, axis=0)
+        return poly
+
+
+def shrink(poly, length):
+    if len(poly) <= length:
+        return poly
+    else:
+        remove = len(poly) - length
+        diff = [(np.linalg.norm(poly[i-1] -  poly[i]), i) for i in range(1, len(poly))]
+        s_diff = sorted(diff, key=lambda x: x[0])[:remove]
+        remove_indexes = set([s[1] for s in s_diff])
+        new_poly = [poly[i] for i in range(len(poly)) if i not in remove_indexes]
+        return np.array(new_poly)
+
+
+def diff_poly(poly1, poly2, frac=0.5):
+    data_count = min(len(poly1), len(poly2))
+    poly1, poly2 = shrink(poly1, data_count), shrink(poly2, data_count)
+
+    fft1 = poly_to_dft(poly1, 2)
+    fft2 = poly_to_dft(poly2, 2)
+
+    l_fft1 = low_pass(fft1, frac)
+    l_fft2 = low_pass(fft2, frac)
+    diff = l_fft1 - l_fft2
+    return np.linalg.norm(np.real(diff), ord=1), np.linalg.norm(np.imag(diff), ord=1)
+
+
+
+
+
+
 
 
 if __name__ == '__main__':

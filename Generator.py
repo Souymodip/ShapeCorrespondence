@@ -18,18 +18,55 @@ def sub_sampler(f, fraction):
     return np.array(new_y), np.array(new_x)
 
 
+def perturb_x_metric(f, px, interval):
+    yx, xx = f
+    y = yx #cp.deepcopy(yx)
+    x = xx #cp.deepcopy(xx)
+    assert (x.size == y.size)
+    r = np.random.rand(x.size)
+    diff = 0
+    for i in range(1, x.size-1):
+        if r[i] <= px:
+            low = max (x[i-1], x[i] - interval/2)
+            high = min (x[i+1], x[i] + interval/2)
+            new_x = np.random.uniform(low, high, 1)[0]
+            diff = diff + np.absolute(new_x - x[i])
+            x[i] = new_x
+
+    return y, x, diff
+
+
 def perturb_x(f, px, interval):
     yx, xx = f
     y = yx #cp.deepcopy(yx)
     x = xx #cp.deepcopy(xx)
     assert (x.size == y.size)
     r = np.random.rand(x.size)
+    diff = 0
     for i in range(1, x.size-1):
         if r[i] <= px:
             low = max (x[i-1], x[i] - interval/2)
             high = min (x[i+1], x[i] + interval/2)
-            x[i] = np.random.uniform(low, high, 1)[0]
+            new_x = np.random.uniform(low, high, 1)[0]
+            diff = diff + np.absolute(new_x - x[i])
+            x[i] = new_x
     return y, x
+
+
+def perturb_y_metric(f, py, interval):
+    yx, xx = f
+    y = yx #cp.deepcopy(yx)
+    x = xx #cp.deepcopy(xx)
+    assert (x.size == y.size)
+    r = np.random.rand(x.size)
+    diff = 0
+    for i in range(1, x.size-1):
+        if r[i] <= py:
+            v = interval/3
+            noice = np.random.normal(0, v, 1)[0]
+            diff = diff + noice
+            y[i] = y[i] + noice
+    return y, x, diff
 
 
 def perturb_y(f, py, interval):

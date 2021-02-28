@@ -201,6 +201,9 @@ class Polygon(Art):
     def get_type(self):
         return Type.POLYGON
 
+    def get_vertices(self):
+        return self.points
+
     def get_vertex(self, id):
         assert id < len(self.points)
         return self.points[id]

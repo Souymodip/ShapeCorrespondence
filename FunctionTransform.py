@@ -100,14 +100,26 @@ def turn_angle(p0, p1, p2):
     """radian at p1"""
     a, b = p1 - p0, p2 - p1
 
+    def angle(x, y):
+        if x == 0: return np.pi/2 if y >=0 else np.pi * 3 / 2
+        else:
+            theta = np.arctan(np.abs(y)/np.abs(x))
+            if y >=0 and x >=0:
+                return theta
+            if y >=0 and x < 0:
+                return np.pi - theta
+            if y < 0 and x < 0:
+                return np.pi + theta
+            else:
+                return 2 * np.pi - theta
+
     if np.linalg.norm(a) * np.linalg.norm(b) == 0:
         return 0.0
     else:
-        # assert (np.linalg.norm(a) * np.linalg.norm(b) > 0 )
-        sin = np.cross(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-        sin = 1 if sin > 1 else (-1 if sin < -1 else sin)
-        t = np.arcsin(sin)
-        t = t if t >=0 else 2*np.pi - t
+        a, b = a / np.linalg.norm(a), b / np.linalg.norm(b)
+        atheta, btheta = angle(a[0], a[1]), angle(b[0], b[1])
+        t = btheta - atheta
+        t = t if t >=0 else 2*np.pi + t
         return t
 
 
@@ -181,6 +193,25 @@ def art_to_function(art, importance_angle = 15):
     d1 = d1 / d1[-1]
     return a1, d1
 
+
+def func_to_poly(f, mult):
+    y, x = f
+    size = len(y)
+    assert size == len(x)
+    poly = [[0.0, 0.0]]
+    direction = y[0]
+    for i in range(1, size):
+        r = (x[i] - x[i-1]) * mult
+        last = poly[-1]
+        # print("{}:D:{:.2f}".format(i, np.rad2deg(direction)))
+        next = last[0] + r * np.cos(direction), last[1] +  r * np.sin(direction)
+        poly.append(next)
+        direction = y[i] + direction
+    return np.array(poly)
+
+
+def func_to_polygon(f, mult):
+    return Art.Polygon(func_to_poly(f, mult))
 
 
 def main():

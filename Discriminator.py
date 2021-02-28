@@ -28,6 +28,22 @@ def perturb(f, p=0.8):
     return p_f
 
 
+def perturb_metric(f, p=0.8):
+    p_f = cp.deepcopy(f)
+    diff = 0
+    if np.random.rand() < p:
+        p_y, p_x, diff_x = gen.perturb_x_metric(p_f, 0.9, 0.5)
+        diff = diff + diff_x
+        p_f = p_y, p_x
+
+    # if np.random.rand() < p:
+    #     p_y, p_x, diff_y = gen.perturb_y_metric(p_f, 0.9, 1)
+    #     diff = diff + diff_y
+    #     p_f = p_y, p_x
+
+    return p_f, diff
+
+
 def flatten(f):
     yf, xf = f
     data = []
