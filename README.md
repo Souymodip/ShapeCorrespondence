@@ -16,6 +16,10 @@ We will explore different ideas
      3.b. <b>Enclosed Area </b>: The enclosing area between the two graph defines the similarity.
      
      Run <b><i>ShapeSimilarity.py</i></b> to see an example. The following correspondence were established with this method
+     
+     <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/Images/CurveMatching/image1.png" alt="" width="360" height="250">
+     <br>
+     <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/Images/CurveMatching/image2.png" alt="" width="360" height="250">
      <br>
      <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/Images/CurveMatching/image3.png" alt="" width="360" height="250">
      
@@ -30,8 +34,17 @@ We will explore different ideas
 
       4.c. The trained model is used to measure the value of </t><a href="https://www.codecogs.com/eqnedit.php?latex=f_1&space;\sim&space;f_2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f_1&space;\sim&space;f_2" title="f_1 \sim f_2" /></a>
       
+      <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/image2.png" alt="" width="360" height="250">
       
-5. <b> Cut-Match </b> The art is broken down into sequence of cuts. The objective is to match cuts from one art to the other. The algorithm can be viewed as 2-player game (without objective function). First player (P1) chooses a cut to from art1 and second player (P2) finds a cut from art2 which is most similar to the given cut. This process is repeated till the entire art is covered. Below we formaly define what is a cut.
-
-The algorithm is parametric, as we can try different similarity function and method of choosing cuts. The instantiations which yielded the most promise are as follows:
-    
+      <br>
+      
+      <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/image3.png" alt="" width="360" height="250">
+      
+      <br>
+      
+      <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/image4.png" alt="" width="360" height="250">
+      
+      <br>
+      
+      <img src="https://github.com/Souymodip/ShapeCorrespondence/blob/main/image5.png" alt="" width="400" height="250">
+     

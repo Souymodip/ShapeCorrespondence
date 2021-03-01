@@ -26,6 +26,11 @@ class Cut:
         p.isClosed = False
         return p
 
+    def get_bounds(self):
+        xs = [p[0] for p in self.poly]
+        ys = [p[1] for p in self.poly]
+        return np.array([[np.min(xs), np.min(ys)], [np.max(xs), np.max(ys)]])
+
     def __str__(self):
         s = "Cut [\n" \
             "\tindex:  {}\n" \
@@ -51,7 +56,10 @@ class Cuts:
 
         if index == len(self.poly): index = 0
 
-        ratio = (curr_x - x_val) / np.linalg.norm(self.poly[index-1] - self.poly[index])
+        if np.linalg.norm(self.poly[index-1] - self.poly[index]) < 1e-6:
+            ratio = 0
+        else:
+            ratio = (curr_x - x_val) / np.linalg.norm(self.poly[index-1] - self.poly[index])
         first = self.poly[index] * (1-ratio) + self.poly[index-1] * (ratio)
         new_poly = [first]
 
@@ -192,7 +200,7 @@ class Cut_Match:
         # match adjacent
         print("Neighbourhood Match ...")
         nexts1, nexts2 = [r_cut1], [ex_cut2]
-        for i in range (1, int(MM.length(self.cuts1.poly)/self.cut_length)):
+        for i in range (int(MM.length(self.cuts1.poly)/self.cut_length)):
             next1, next2 = self.match_next(nexts1[-1], nexts2[-1])
             nexts1.append(next1), nexts2.append(next2)
 
@@ -221,11 +229,28 @@ class Cut_Match:
         D3.draw_polys([cut1.polygon(), cut2.polygon()], match0)
 
 
+def draw_cut_match(cuts1, cuts2, cut_pairs):
+    d = Art.Draw()
+    d.add_art(Art.Polygon(cuts1.poly)), d.add_art(Art.Polygon(cuts2.poly))
+    for l, r in cut_pairs:
+        box1,box2 = l.get_bounds(), r.get_bounds()
+        Art.draw_bbox(d, box1, (100, 100, 250))
+        Art.draw_bbox(d, box2, (100, 100, 250))
+        c_i, c_j = np.mean(box1, axis=0), np.mean(box2, axis=0)
+        mid1, mid2 = (c_i / 3 + c_j * 2 / 3), (c_i * 2 / 3 + c_j / 3)
+        mid1[1], mid2[1] = mid1[1] + 5, mid2[1] + 5
+        b = Art.Bezier([c_i, mid2, mid1, c_j])
+        b.set_color((255, 0, 255))
+        d.add_art(b)
+    d.draw()
+
+
+
 if __name__ == '__main__':
     mm = MM.MatchMaker(importance_percentile=100)
-    arts = ts.get_test(0)
-    id1, id2 = mm.add_art(arts[0]), mm.add_art(arts[4])
+    arts = ts.get_test(3)
+    id1, id2 = mm.add_art(arts[0]), mm.add_art(arts[3])
     p1, p2 = mm.get_poly(id1), mm.get_poly(id2)
 
-    cm = Cut_Match(p1, p2, stride=10, cut_length=20)
+    cm = Cut_Match(p1, p2, stride=10, cut_length=30)
     cm.cut_match()
