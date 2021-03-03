@@ -86,9 +86,15 @@ def get_neighbourhood (cuts2, x_val2, cut_length):
     overlap_fraction = 0.5
     if x_val2 > (1 + overlap_fraction) * cut_length:
         l = x_val2 - (1 + overlap_fraction) * cut_length
-        intervals = [(l, x_val2)]
+        intervals = [(l, x_val2 - overlap_fraction * cut_length)]
     else:
-        intervals = [(0, x_val2), ( cuts2.total_length - ((1 + overlap_fraction) * cut_length - x_val2), cuts2.total_length)]
+        if x_val2 - overlap_fraction * cut_length >= 0 :
+            intervals = [(0, x_val2 - overlap_fraction * cut_length), \
+                         (cuts2.total_length - ((1 + overlap_fraction) * cut_length - x_val2), cuts2.total_length)]
+        else:
+            intervals = [(0, x_val2 - overlap_fraction * cut_length), \
+                         (cuts2.total_length - ((1 + overlap_fraction) * cut_length - x_val2), \
+                          cuts2.total_length - (overlap_fraction * cut_length - x_val2))]
     return intervals
 
 
@@ -135,19 +141,8 @@ class Cut_Match:
         self.stride = stride
         self.cut_length = cut_length
 
-    def extact_match(self, cut):
-        diff = []
-        p1 = cut.poly
-
-        def abs(p): return np.sqrt(p[0] ** 2 + p[1] ** 2)
-
-        for x in np.arange(0, MM.length(self.cuts2.poly), self.stride):
-            p2 = self.cuts2.get_cut_at(x, self.cut_length).poly
-            diff.append(abs(dft.diff_poly(p1, p2, frac=1)))
-        min_index = np.argmin(diff)
-        min_x = self.stride * min_index
-        print("\t\tCut1 : {:.2f}, Cut2: {:.2f}, Diff := {:.3f}".format(cut.x_val, min_x, diff[min_index]))
-        return self.cuts2.get_cut_at(min_x, self.cut_length), diff[min_index]
+    def exact_match(self, cut):
+        return self.neighbour_match(cut,[(0, MM.length(self.cuts2.poly))])
 
     def neighbour_match(self, cut, intervals):
         print("\tNeighbourhood : {}".format(intervals))
@@ -169,7 +164,7 @@ class Cut_Match:
                     min_x, min_val = l + self.stride * min_index, diff[min_index]
 
         print("\t\tCut1 : {:.2f}, Cut2: {:.2f}, Diff := {:.3f}".format(cut.x_val, min_x, min_val))
-        return self.cuts2.get_cut_at(min_x, self.cut_length)
+        return self.cuts2.get_cut_at(min_x, self.cut_length), min_val
 
     def match_next(self, cut1, cut2):
         cut_length = cut1.length
@@ -177,7 +172,7 @@ class Cut_Match:
                 cut_length - cut1.x_val)
         intervals = get_neighbourhood(self.cuts2, cut2.x_val, cut_length)
         left1 = self.cuts1.get_cut_at(x_left, cut_length)
-        left2 = self.neighbour_match(left1, intervals)
+        left2, _ = self.neighbour_match(left1, intervals)
         return left1, left2
 
     def rand_initial(self, times):
@@ -186,7 +181,7 @@ class Cut_Match:
         rs = np.random.choice(int(self.cuts1.total_length/step), times, replace=True)
         for r in rs:
             r_cut1 = self.cuts1.get_cut_at(r*step, length=self.cut_length)
-            ex_cut2, diff = self.extact_match(r_cut1)
+            ex_cut2, diff = self.exact_match(r_cut1)
             if min_val > diff:
                 min_cut1, min_cut2, min_val = r_cut1, ex_cut2, diff
         print("\tInitalizing from Cut1:{}, Cut2:{}".format(min_cut1.x_val, min_cut2.x_val))
@@ -245,11 +240,10 @@ def draw_cut_match(cuts1, cuts2, cut_pairs):
     d.draw()
 
 
-
 if __name__ == '__main__':
     mm = MM.MatchMaker(importance_percentile=100)
-    arts = ts.get_test(3)
-    id1, id2 = mm.add_art(arts[0]), mm.add_art(arts[3])
+    arts = ts.get_test(0)
+    id1, id2 = mm.add_art(arts[0]), mm.add_art(arts[5])
     p1, p2 = mm.get_poly(id1), mm.get_poly(id2)
 
     cm = Cut_Match(p1, p2, stride=10, cut_length=30)
