@@ -374,9 +374,9 @@ class Bezier(Art):
 
 
 class PieceWiseBezier(Art):
-    def __int__(self, beziers):
+    def __int__(self, anchors):
         super().__init__()
-        self.beziers = beziers
+        self.beziers = anchors
 
     def get_type(self):
         return Type.PIECEWISE_BEZIER
