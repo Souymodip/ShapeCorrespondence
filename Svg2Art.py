@@ -28,39 +28,39 @@ def line_anchor(e, last):
     return np.array([p, in1, out1]), last
 
 
-def to_PiecewiseBezier(path_strings):
+def to_PiecewiseBezier(path_strings, debug=False):
     arts = []
     for path_string in path_strings:
         bzs = []
         path = parse_path(path_string)
         last = None
         is_closed = False
-        print(path)
         for e in path:
             if isinstance(e, CubicBezier):
                 b, last = curve_anchor(e, last)
-                print ("B:{} :-> {}".format(e, b))
+                if debug:
+                    print ("B:{} :-> {}".format(e, b))
                 bzs.append(b)
                 last_curve = e
             elif isinstance(e, Line) :
                 b, last = line_anchor(e, last)
-                print("L:{} :-> {}".format(e, b))
+                if debug:
+                    print("L:{} :-> {}".format(e, b))
                 bzs.append(b)
             elif isinstance(e, Close):
                 b, last = line_anchor(e, last)
                 bzs.append(b)
-                print("C:{} :-> {}".format(e, b))
+                if debug:
+                    print("C:{} :-> {}".format(e, b))
                 is_closed = True
                 break
         if not is_closed:
             p = to_point(last_curve.end)
             in1 = last
             out1 = p
-            print("p:{}, in:{}, out:{}".format(p, in1, out1))
+            if debug:
+                print("p:{}, in:{}, out:{}".format(p, in1, out1))
             bzs.append(np.array([p, in1, out1]))
-
-        print (is_closed)
-        print (bzs)
         arts.append(Art.PieceWiseBezier(np.array(bzs), is_closed=is_closed))
     return arts
 
@@ -100,14 +100,16 @@ def get_arts(file1, file2):
     # svg_file = "/Users/souchakr/Research/svg/cubic_bezier2.svg"
     art1, scale = read(file1)
     art2, _ = read(file2, scale)
+    print ("----------------------------------------")
     return art1, art2
 
 
 if __name__ == '__main__':
-    svg_file1 = "/Users/souchakr/Research/svg/cubic_bezier2.svg"
-    svg_file2 = "/Users/souchakr/Research/svg/cubic_bezier.svg"
-    art1, art2 = get_arts(svg_file1, svg_file2)
+    # svg_file1 = "/Users/souchakr/Research/svg/cubic_bezier2.svg"
+    # svg_file2 = "/Users/souchakr/Research/svg/cubic_bezier.svg"
+    # art1, art2 = get_arts(svg_file1, svg_file2)
+    a, _ = read("/Users/souchakr/Research/svg/camel.svg")
     d = Art.Draw()
-    d.add_art(art1)
-    d.add_art(art2)
+    d.add_art(a)
+    # d.add_art(art2)
     d.draw()

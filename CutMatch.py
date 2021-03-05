@@ -242,12 +242,12 @@ def draw_cut_match(cuts1, cuts2, cut_pairs):
 
 def execute(art1, art2):
     mm = MM.MatchMaker(importance_percentile=100)
-    arts = ts.get_test(0)
     id1, id2 = mm.add_art(art1), mm.add_art(art2)
     p1, p2 = mm.get_poly(id1), mm.get_poly(id2)
 
     cm = Cut_Match(p1, p2, stride=10, cut_length=30)
     cm.cut_match()
+
 
 
 def main():
