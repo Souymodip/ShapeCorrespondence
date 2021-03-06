@@ -108,7 +108,7 @@ if __name__ == '__main__':
     # svg_file1 = "/Users/souchakr/Research/svg/cubic_bezier2.svg"
     # svg_file2 = "/Users/souchakr/Research/svg/cubic_bezier.svg"
     # art1, art2 = get_arts(svg_file1, svg_file2)
-    a, _ = read("/Users/souchakr/Research/svg/camel.svg")
+    a, _ = read("/Users/souchakr/Research/svg/Girl_Poses/p1.svg")
     d = Art.Draw()
     d.add_art(a)
     # d.add_art(art2)

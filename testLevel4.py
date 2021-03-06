@@ -47,8 +47,9 @@ def get_test(index):
 
 
 if __name__ == '__main__':
-    kids = get_test(3)
+    kids = get_test(0)
     d = Art.Draw()
-    for k in kids:
-        d.add_art(k)
+    d.add_art(kids[3])
+    # for k in kids:
+    #     d.add_art(k)
     d.draw()

@@ -7,6 +7,12 @@ import MatchMaker as MM
 import Art
 import D3Plot as D3
 import DFT as dft
+import Procrutes
+from Helpers import timer
+
+
+STRIDE=5
+CUT_LENGTH=30
 
 
 def double(f):
@@ -84,17 +90,19 @@ class Cuts:
 
 def get_neighbourhood (cuts2, x_val2, cut_length):
     overlap_fraction = 0.5
+    righ_overlap = overlap_fraction * cut_length
+
     if x_val2 > (1 + overlap_fraction) * cut_length:
         l = x_val2 - (1 + overlap_fraction) * cut_length
-        intervals = [(l, x_val2 - overlap_fraction * cut_length)]
+        intervals = [(l, x_val2 - righ_overlap)]
     else:
-        if x_val2 - overlap_fraction * cut_length >= 0 :
-            intervals = [(0, x_val2 - overlap_fraction * cut_length), \
+        if x_val2 - righ_overlap >= 0 :
+            intervals = [(0, x_val2 - righ_overlap), \
                          (cuts2.total_length - ((1 + overlap_fraction) * cut_length - x_val2), cuts2.total_length)]
         else:
-            intervals = [(0, x_val2 - overlap_fraction * cut_length), \
+            intervals = [(0, x_val2 - righ_overlap), \
                          (cuts2.total_length - ((1 + overlap_fraction) * cut_length - x_val2), \
-                          cuts2.total_length - (overlap_fraction * cut_length - x_val2))]
+                          cuts2.total_length - (righ_overlap - x_val2))]
     return intervals
 
 
@@ -134,12 +142,14 @@ def match_internal(cut1, cut2):
 
 
 class Cut_Match:
-    def __init__(self, poly1, poly2, stride, cut_length):
+    def __init__(self, poly1, poly2, diff, stride, cut_length):
         count = min(len(poly1), len(poly2))
         poly1, poly2 = dft.shrink(poly1, count), dft.shrink(poly2, count)
+        # poly1, poly2 = Procrutes.equal_spacing(poly1, poly2)
         self.cuts1, self.cuts2 = Cuts(poly1), Cuts(poly2)
         self.stride = stride
         self.cut_length = cut_length
+        self.diff = diff
 
     def exact_match(self, cut):
         return self.neighbour_match(cut,[(0, MM.length(self.cuts2.poly))])
@@ -148,15 +158,12 @@ class Cut_Match:
         print("\tNeighbourhood : {}".format(intervals))
         p1 = cut.poly
 
-        def abs(p):
-            return np.sqrt(p[0] ** 2 + p[1] ** 2)
-
         min_x, min_val = 0, np.inf
         for l, h in intervals:
             diff = []
             for x in np.arange(l, h, self.stride):
                 p2 = self.cuts2.get_cut_at(x, self.cut_length).poly
-                d = abs(dft.diff_poly(p1, p2, frac=1))
+                d = self.diff(p1, p2) # np.linalg.norm(dft.diff_poly(p1, p2, frac=1.0)) #
                 diff.append(d)
             if len(diff) > 0:
                 min_index = np.argmin(diff)
@@ -175,6 +182,7 @@ class Cut_Match:
         left2, _ = self.neighbour_match(left1, intervals)
         return left1, left2
 
+    @timer
     def rand_initial(self, times):
         min_cut1, min_cut2, min_val = None, None, np.inf
         step = 2
@@ -210,15 +218,16 @@ class Cut_Match:
             D3.draw_polys([polys[2*i], polys[2*i + 1]], match0)
 
     def test(self):
-        x1, x2 = 22.72, 20.00
+        x1, x2 = 66, 88.00
 
         cut1 = self.cuts1.get_cut_at(x1, self.cut_length)
         # cut2 = cuts2.get_cut_at(x2, cut_length)
-        cut2, _ = self.extact_match(cut1)
+        cut2, _ = self.exact_match(cut1)
 
         p1, p2 = cut1.poly, cut2.poly
-        diff = dft.diff_poly(p1, p2, frac=1)
-        print("Cut1 : {}, Cut2: {}, Diff := {:.3f}, {:.3f}".format(x1, x2, diff[0], diff[1]))
+
+        d = self.diff(p1, p2)
+        print("Cut1 : {}, Cut2: {}, Diff := {}".format(x1, x2, d))
         match0 = match_internal(cut1, cut2)
 
         D3.draw_polys([cut1.polygon(), cut2.polygon()], match0)
@@ -240,14 +249,27 @@ def draw_cut_match(cuts1, cuts2, cut_pairs):
     d.draw()
 
 
-def execute(art1, art2):
+def get_diff_method(index):
+    def func_procrustes(p1, p2):
+        return Procrutes.distance(p1, p2)
+
+    def func_dft(p1, p2):
+        def abs(p):
+            return np.sqrt(p[0] ** 2 + p[1] ** 2)
+        # p1, p2 = Procrutes.align(p1, p2)
+        return abs(dft.diff_poly(p1, p2, frac=1.0))
+    func_name = "Dft low pass diff" if index == 0 else "Procrustes Diff"
+    print("Matching Option {} is chosen : {}".format(index, func_name))
+    return func_dft if index == 0 else func_procrustes
+
+
+def execute(art1, art2, option):
     mm = MM.MatchMaker(importance_percentile=100)
     id1, id2 = mm.add_art(art1), mm.add_art(art2)
     p1, p2 = mm.get_poly(id1), mm.get_poly(id2)
 
-    cm = Cut_Match(p1, p2, stride=10, cut_length=30)
+    cm = Cut_Match(p1, p2, get_diff_method(option), stride=STRIDE, cut_length=CUT_LENGTH)
     cm.cut_match()
-
 
 
 def main():
@@ -256,8 +278,8 @@ def main():
     id1, id2 = mm.add_art(arts[0]), mm.add_art(arts[5])
     p1, p2 = mm.get_poly(id1), mm.get_poly(id2)
 
-    cm = Cut_Match(p1, p2, stride=10, cut_length=30)
-    cm.cut_match()
+    cm = Cut_Match(p1, p2, get_diff_method(1), stride=STRIDE, cut_length=CUT_LENGTH)
+    cm.test()
 
 
 if __name__ == '__main__':
