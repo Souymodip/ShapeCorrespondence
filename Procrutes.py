@@ -62,10 +62,13 @@ def remove_scale(poly):
     assert s > 0
     return poly / s
 
+def normalize(poly):
+    return remove_scale(remove_translation(poly))
+
 
 def align(poly1, poly2):
     p1, p2 = equal_spacing(poly1, poly2)
-    p1, p2 = remove_scale(remove_translation(p1)), remove_scale(remove_translation(p2))
+    p1, p2 = normalize(p1), normalize(p2)
 
     x1, y1 = np.array([p[0] for p in p1]), np.array([p[1] for p in p1])
     x2, y2 = np.array([p[0] for p in p2]), np.array([p[1] for p in p2])

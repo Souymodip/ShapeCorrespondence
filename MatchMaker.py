@@ -138,10 +138,7 @@ class ArtBox:
         return np.array(new_poly)
 
     def to_func_normal(self):
-        if self.poly is None:
-            self.poly = self.piecewise_bezier_to_polygon()
-            self.poly = self.importance_sample()
-
+        self.get_poly()
         poly = self.poly if is_diff(self.poly[0], self.poly[-1]) else self.poly[:-1]
         assert (len(poly) > 2)
         l = len(poly) + 1
@@ -157,21 +154,21 @@ class ArtBox:
 
         length[-1] = length[l-2] + np.linalg.norm(poly[0] - poly[-1])
         radian[-1] = radian[0]
-        self.distance = length
+        self.distance = length if self.distance is None else self.distance
 
         return radian, length/ length[-1]
 
     def get_function(self):
         assert self.art is not None
-        if self.poly is None:
+        if self.fun is None:
             a1, d1 = self.to_func_normal()
             self.fun = a1, d1
         return self.fun
 
     def get_poly(self):
         if self.poly is None:
-            self.clear()
-            self.get_function()
+            self.poly = self.piecewise_bezier_to_polygon()
+            self.poly = self.importance_sample()
         return self.poly
 
     def get_polygon(self):
@@ -179,8 +176,14 @@ class ArtBox:
 
     def get_distance(self):
         if self.distance is None:
-            self.clear()
-            self.get_function()
+            self.distance = [0]
+            self.get_poly()
+            for i in range(1, len(self.poly)):
+                curr = self.distance[-1] + np.linalg.norm(self.poly[i-1] - self.poly[i])
+                self.distance.append(curr)
+            if self.art.is_closed:
+                self.distance.append(self.distance[-1] + np.linalg.norm(self.poly[0] - self.poly[-1]))
+            self.distance = np.array(self.distance)
         return self.distance
 
     def get_art(self):
@@ -348,6 +351,10 @@ class MatchMaker:
     def index_to_point(self, id, index):
         assert id < len(self.art_boxes)
         return self.art_boxes[id].index_to_point(index)
+
+    def get_length(self, id):
+        assert id < len(self.art_boxes)
+        return self.art_boxes[id].get_distance()[-1]
 
 def main():
     arts = testsuite.get_test(0)

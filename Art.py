@@ -384,6 +384,7 @@ class PieceWiseBezier(Art):
     def __init__(self, anchors, is_closed=True, show_control=False):
         super().__init__()
         assert(anchors.shape[1] == 3 and anchors.shape[2] == 2)
+        self.anchors = anchors
         self.is_closed = is_closed
         self.beziers = []
         for i in range(anchors.shape[0] - 1):

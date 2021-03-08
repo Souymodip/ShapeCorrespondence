@@ -75,4 +75,7 @@ R1.place(x=150, y = 110)
 R2 = create_radio(root, text="Procrustes", value=1, command=sel)
 R2.place(x=300, y=110)
 
+R3 = create_radio(root, text="NN Encoder", value=2, command=sel)
+R3.place(x=450, y=110)
+
 root.mainloop()

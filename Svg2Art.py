@@ -65,6 +65,17 @@ def to_PiecewiseBezier(path_strings, debug=False):
     return arts
 
 
+def print_anchors(art):
+    def point(p):
+        return "[" + str(p[0]) +", " + str(p[1]) +"]"
+
+    s = "Art.PieceWiseBezier(np.array(["
+    for a in art.anchors:
+        s = s + "[" + point(a[0]) + ", " + point(a[1]) + ", " + point(a[2]) + "], "
+    s = s + "]))"
+    print (s)
+
+
 def read(svg_file, scale =None):
     print("Reading file :{}".format(svg_file))
     doc = minidom.parse(svg_file)  # parseString also exists
@@ -72,6 +83,7 @@ def read(svg_file, scale =None):
                     in doc.getElementsByTagName('path')]
     doc.unlink()
     arts = to_PiecewiseBezier(path_strings)
+
     if len(arts) == 0 :
         print("Error: Could not parse svg {}".format(svg_file))
         exit(0)
@@ -79,6 +91,8 @@ def read(svg_file, scale =None):
         print("Warning: Multiple Piecewise Bezier curve is not handled in this version. Choosing the first.")
 
     art = arts[0]
+    # print_anchors(art)
+
     art.apply(Art.Translate(-art.get_centroid()))
 
     if scale is None:
