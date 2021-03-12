@@ -88,7 +88,7 @@ def train(net, train_set, num_epoch, batch_size, generator):
         out_net = net(samples)
         loss_net = net.loss_function(out_net, labels)
         loss_net.backward()
-        net.optimize()
+        net.step()
         return loss_net
 
     for epoch in range(num_epoch):
@@ -129,7 +129,7 @@ class Discriminator(nn.Module):
     def forward(self, x):
         return self.model(x)
 
-    def optimize(self):
+    def step(self):
         th.optim.Adam(self.parameters(), lr=self.lr).step()
 
 

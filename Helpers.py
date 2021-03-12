@@ -40,12 +40,12 @@ def save_model(model):
     th.save(model, PATH+file_name)
 
 
-def save_model_state(model):
+def save_model_state(model, pre):
     def string(a):
         return str(a) if a >= 10 else "0"+str(a)
     now = datetime.now()
     compression = str(model.dimension) + "_to_" + str(model.final)
-    file_name = "M_" + compression + "_on_D" + string(now.day) + "_H" + string(now.hour) + "_M" + string(now.minute) + ".pt"
+    file_name = pre + "_" + compression + "_on_D" + string(now.day) + "_H" + string(now.hour) + "_M" + string(now.minute) + ".pt"
     th.save(model.state_dict(), PATH+file_name)
 
 
@@ -55,11 +55,11 @@ def load_model_state(model, file):
     return model
 
 
-def load_last_model(dimension, final, model):
+def load_last_model(dimension, final, model, pre):
     _, _, files = next(walk(PATH))
     def find(name):
         first = name.split("_on_")[0]
-        return first == "M_" + str(dimension) +"_to_" + str(final)
+        return first == pre + "_" + str(dimension) +"_to_" + str(final)
 
     files = [file for file in files if find(file)]
     if len(files) == 0:
